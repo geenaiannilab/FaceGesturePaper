@@ -26,8 +26,8 @@ workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/Pseudopopulations/' popType '/']);
 
 % DO NOT CHANGE!
 win = 0.01; % in sec
-tmin = 0.5;
-tmax = 0.5;
+tmin = 1;
+tmax = 1;
 taxis = -tmin:win:tmax;  
 
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
