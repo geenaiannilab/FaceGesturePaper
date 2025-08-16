@@ -6,10 +6,10 @@ set(0,'defaultAxesFontSize',24);
 set(0,'defaultAxesFontWeight','bold');
 
 %% data params 
-subject = 'Barney';
-date = '210704';
+subject = 'Thor';
+date = '171010';
 runTSNE = false;
-subsessions2plot = [2:5 7:10];
+subsessions2plot = [6];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
@@ -108,7 +108,7 @@ for ss = 1:length(subs2use)
     % remove events whose trial duration is outside of framesExported
     fmin = tmin*bhvSR; % convert to frames
     fmax = tmax*bhvSR;
-    
+
     allOnsets = cell2mat(obhvThis.evScore(:,1));
     theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
     theseTrials = logical(allTrials .* theseTrials);
@@ -128,7 +128,7 @@ for ss = 1:length(subs2use)
     for tt = 1:length(theseOnsets)
         onsetMin = theseOnsets(tt) - fmin;
         onsetMax = theseOnsets(tt) + fmax;
-        thisData = DLCmarkers(onsetMin:onsetMax,:);
+        thisData = DLCmarkers(onsetMin:onsetMax,:); % DLCmarkers is nFrames x (nMarkersx2)
 
         %%%% downsample the DLC tracking data
         DLCtimeBase = -tmin:(1/bhvSR):tmax;
@@ -223,9 +223,10 @@ percentVar = explained;
 
 clear DLCin; clear obhv; clear DLCmarkers;
 
+%% save files 
 outDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
 save([outDir '/markerTrajectories.mat'], ...
-    'bhvTraj','PCweights','meanPos', 'coeff','latent','explained','taxis','bhvs2plot','gestureNames','markerLabels','customColormap');
+    'bhvTraj','PCweights','meanPos', 'coeff','latent','explained','taxis','bhvs2plot','gestureNames','markerData2plot','markerLabels','customColormap');
 
 %%
 function [bhvOut,downsampledTimeBaseVector] = rebinBhv(bhvIn, timeBaseOld, newBinsize)
