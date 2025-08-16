@@ -1,4 +1,4 @@
-%%% FEP = nExp - [(sum (Ri) / rmax)] ./ nExp -1 
+%%% FEP = (nExp - [(sum (Ri) / rmax)]) ./ nExp -1 
 %%% 
 %%% Ri = spike rate for expression, i 
 %%% Rmax = max Ri of any expression

@@ -1,5 +1,5 @@
 %%% writen GI 211115 
-%%% preference index = nExp - [(sum (Ri) / rmax)] ./ nExp -1 
+%%% preference index = (nExp - [(sum (Ri) / rmax)]) ./ nExp -1 
 %%% 
 %%% Ri = spike rate for expression, i 
 %%% Rmax = max Ri of any expression
@@ -219,7 +219,7 @@ Ris = meanFRs(thrCells2use,:);
 nExp = length(bhvs2plot);
 faceExpPref = nan(1,length(Ris));
 
-% index = nExp - [(sum (Ri) / rmax)] ./ nExp -1 
+% index = (nExp - [(sum (Ri) / rmax)]) ./ nExp -1 
 for unit = 1:length(Ris)
     faceExpPref(unit) = (nExp - (sum(Ris(unit,:)) ./ Rmaxs(unit))) ./ (nExp -1);
 end
