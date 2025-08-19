@@ -9,7 +9,7 @@ set(0,'defaultAxesFontWeight','bold');
 subject = 'Thor';
 date = '171010';
 runTSNE = false;
-subsessions2plot = [6];
+subsessions2plot = [ 6];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
@@ -110,7 +110,11 @@ for ss = 1:length(subs2use)
     fmax = tmax*bhvSR;
 
     allOnsets = cell2mat(obhvThis.evScore(:,1));
+    
+    % only trials that started >1 s after recording, and finished in time
     theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
+    
+    % only trials as above, IN ADDITION, only bhv = 1,2,4
     theseTrials = logical(allTrials .* theseTrials);
     
     theseOnsets = allOnsets(theseTrials); % handscored index, in subsession
@@ -119,6 +123,7 @@ for ss = 1:length(subs2use)
         disp(['sessionID = ' sessionID '  -- adjusting onsets for video export']);
         theseOnsets = theseOnsets - 2000; 
         theseOnsets = theseOnsets((theseOnsets-fmin) >= 0);
+        % account for 'theseTrials' < 0 here 
     end
     
     trialTypes = cell2mat(obhvThis.evScore(theseTrials,5));
@@ -162,12 +167,12 @@ end
 %  bhvTraj(bhv).data = nTimepoints x nMarkers x nTrials 
 for bhv = 1:length(bhvs2plot)
 
-    theseTrials = (allBhv.trialTypeData) == bhvs2plot(bhv);
+    data2grab = (allBhv.trialTypeData) == bhvs2plot(bhv);
     trialDur = length(downsampledTimeAxis);
     nTrials = sum(nTotalTrials);
 
-    bhvTraj(bhv).data = reshape(score(theseTrials,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
-    
+    bhvTraj(bhv).data = reshape(score(data2grab,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
+    % nTrials(bhv) is 26 but score(data2grab,:)) is only 25 trials 
     bhvTraj(bhv).avg = squeeze(mean(bhvTraj(bhv).data,2));
     bhvTraj(bhv).sem = squeeze(std(bhvTraj(bhv).data,[],2) ./ sqrt(nTrials(bhv)));
 
