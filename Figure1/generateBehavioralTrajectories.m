@@ -6,15 +6,15 @@ set(0,'defaultAxesFontSize',24);
 set(0,'defaultAxesFontWeight','bold');
 
 %% data params 
-subject = 'Thor';
-date = '171010';
-runTSNE = false;
-subsessions2plot = [2 3 5 6];
+subject = 'Barney';
+date = '210704';
+runTSNE = true;
+subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
-newBinSize = 0.01;
-tmin = 1;
+newBinSize = 0.1;
+tmin = 0.5;
 tmax = 1;
 centerNormalizeFlag = 0;
 centerFlag = 1;

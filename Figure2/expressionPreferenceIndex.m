@@ -13,28 +13,31 @@
 %%%  neuron firing 2hz, 2hz, 1hz --> 0.25
 
 
+%%% reminder to run for files V2 (+/- 1 s for FEPI) vs no V2 (+/- 0.5 s for
+%%% FEPI) -- same results 
+
 close all;
 clear all;
 
 
-date = '171128'; %
-subject ='Thor'; %
+date = '210704'; %
+subject ='Barney'; %
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
-chls = 1:192;
-subsessions2plot = [1 2 4 5];%
+chls = 1:240;
+subsessions2plot = [2:5 7:10];%
 bhvs2plot = [1 2 4];
 
 minRestFlag = 1;
-minRest = 0.5; % in sec; minimal rest prior to move onset (trials to include)
+minRest = 1; % in sec; minimal rest prior to move onset (trials to include)
 
 colors = 'rbmgc';
 saveFlag = 1;
 threshlowFRFlag = 1;
-threshlowFR = 0.01;
+threshlowFR = 0.1;
 
 win = 0.001; % in sec
-tmin = 0.5;
-tmax = 0.5;
+tmin = 1; %0.5;
+tmax = 1; %0.5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % generate & then downsample gaussKern for convolution w/ spikes binned at "win" resolution
@@ -230,7 +233,7 @@ for unit = 1:length(Ris)
 end
 
 if saveFlag
-   save([workdir '/' date '_' subject '_faceExpPref.mat'], 'Ris','cortRegion','depthPref','faceExpPref','spikeLabels', ...
+   save([workdir '/' date '_' subject '_faceExpPref_V2.mat'], 'Ris','cortRegion','depthPref','faceExpPref','spikeLabels', ...
        'spikeLabels2plot')
 end
 

@@ -3,12 +3,12 @@ clear all;
 set(0,'defaultAxesFontSize',36);
 set(0,'defaultAxesFontWeight','bold');
 
-date = '171027';
+date = '171010';
 subject ='Thor';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 outDir = '~/Dropbox/subFigurePDFs/';
-chls = 129:192; % DO NOT subselect at this stage, ANOVA was run on all 
-subsessions2plot = [1 3 5 6 7];
+chls = 34:192; % DO NOT subselect at this stage, ANOVA was run on all 
+subsessions2plot = [2 3 5 6];
 bhvs2plot = [1 2 4];
 
 colors = 'rbmgc';
@@ -210,7 +210,7 @@ for unit =1:size(allCellsPSTH,3) % per cell
      %legend({'Thr','LS','Chew'},'FontSize',17);
     
      title([subject(1) '-' date '-' spikeLabels{unit}]);
-     subtitle(['FEPI = ' num2str(round(faceExpPref,1))],'FontSize',26);
+     subtitle(['FEPI = ' num2str(round(faceExpPref,2))],'FontSize',26);
 
     pause; 
     prompt = "Save? Y/N [Y]: ";
