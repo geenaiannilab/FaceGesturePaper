@@ -6,10 +6,10 @@ set(0,'defaultAxesFontSize',24);
 set(0,'defaultAxesFontWeight','bold');
 
 %% data params 
-subject = 'Thor';
-date = '171010';
+subject = 'Barney';%'Thor';
+date = '210704';%'171010';
 runTSNE = false;
-subsessions2plot = [2 3 5 6];
+subsessions2plot = [2:5 7:10] %[6];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
@@ -110,20 +110,26 @@ for ss = 1:length(subs2use)
     fmax = tmax*bhvSR;
 
     allOnsets = cell2mat(obhvThis.evScore(:,1));
-
+    
+    % only trials that started >1 s after recording, and finished in time
+    theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
+    
+    % only trials as above, IN ADDITION, only bhv = 1,2,4
+    theseTrials = logical(allTrials .* theseTrials);
+    
+    theseOnsets = allOnsets(theseTrials); % handscored index, in subsession
+    
     if strcmpi(sessionID, 'Thor-171010-154538') 
         disp(['sessionID = ' sessionID '  -- adjusting onsets for video export']);
-        allOnsets = allOnsets - 2000; 
-        %theseOnsets = theseOnsets((theseOnsets-fmin) >= 0);
-    end
+        theseOnsets = theseOnsets - 2000; 
+        idx2take = (theseOnsets-fmin) >= 0;
+        theseOnsets = theseOnsets(idx2take);
+        theseTrials= theseTrials(idx2take);
 
-    theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
-    theseTrials = logical(allTrials .* theseTrials);
-        
+    end
+    
     trialTypes = cell2mat(obhvThis.evScore(theseTrials,5));
     nTotalTrials(ss,:) = hist(trialTypes,bhvs2plot);
-
-    theseOnsets = allOnsets(theseTrials); % handscored index, in subsession
 
     % extract trialData
     for tt = 1:length(theseOnsets)
@@ -163,12 +169,12 @@ end
 %  bhvTraj(bhv).data = nTimepoints x nMarkers x nTrials 
 for bhv = 1:length(bhvs2plot)
 
-    theseTrials = (allBhv.trialTypeData) == bhvs2plot(bhv);
+    data2grab = (allBhv.trialTypeData) == bhvs2plot(bhv);
     trialDur = length(downsampledTimeAxis);
     nTrials = sum(nTotalTrials);
 
-    bhvTraj(bhv).data = reshape(score(theseTrials,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
-    
+    bhvTraj(bhv).data = reshape(score(data2grab,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
+    % nTrials(bhv) is 26 but score(data2grab,:)) is only 25 trials 
     bhvTraj(bhv).avg = squeeze(mean(bhvTraj(bhv).data,2));
     bhvTraj(bhv).sem = squeeze(std(bhvTraj(bhv).data,[],2) ./ sqrt(nTrials(bhv)));
 
@@ -226,7 +232,7 @@ clear DLCin; clear obhv; clear DLCmarkers;
 
 %% save files 
 outDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
-save([outDir '/markerTrajectories.mat'], ...
+save([outDir '/markerTrajectories_tmp.mat'], ...
     'bhvTraj','PCweights','meanPos', 'coeff','latent','explained','taxis','bhvs2plot','gestureNames','markerData2plot','markerLabels','customColormap');
 
 %%
