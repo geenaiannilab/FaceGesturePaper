@@ -12,14 +12,15 @@ combined = summarize_rankorder_results_dirs(dirs, 'DayLabel','dir', ...
     'CSVPath','/Users/geena/Dropbox/PhD/SUAinfo/combined_rankorder_summary.csv');     
 
 % plot spearman by region summary 
-% plot_rankorder_by_region(combined, ...
-%     'Metric','Spearman', ...
-%     'RegionSrc','File', ...
-%     'RegionPatterns', {'All','All'; 'S1','S1'; 'M1','M1'; 'PMv','PMv'; 'M3','M3'}, ...
-%     'NBoot',5000, 'ShowPoints',true);
-
+%%
+plot_rankorder_by_region(combined, ...
+    'Metric','Spearman', ...
+    'RegionSrc','File', ...
+    'RegionPatterns', {'All','All'; 'S1','S1'; 'M1','M1'; 'PMv','PMv'; 'M3','M3'}, ...
+    'NBoot',5000, 'ShowPoints',true);
+%%
 % Spearman summary
-plot_rankorder_summary(combined, 'Metric','Spearman', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
+%plot_rankorder_summary(combined, 'Metric','Spearman', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
 
 % Kendall summary (optional)
 %plot_rankorder_summary(combined, 'Metric','Kendall', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
@@ -126,6 +127,7 @@ for d = 1:numel(dirList)
         end
 
         % ---- print human-readable summary for this file/day ----
+        fprintf('   Date: %s\n', dayLabel);
         fprintf('  File: %s\n', S(k).name);
         for i = 1:height(T)
             pr  = T.Spearman_r(i);
@@ -283,7 +285,7 @@ for i = 1:M
     end
     yTop = ci_high(i);
     if ~isfinite(yTop), yTop = mu_col(i); end
-    text(x(i), yTop + 0.03*rngY, stars, 'HorizontalAlignment','center', 'FontSize', 16,'FontWeight','bold');
+    text(x(i), yTop + 0.3*rngY, stars, 'HorizontalAlignment','center', 'FontSize', 16,'FontWeight','bold');
 end
 
 xlim([0.5 M+0.5]); ylim([-1 1])
@@ -339,7 +341,7 @@ missing = setdiff(needCols, combined.Properties.VariableNames);
 if ~isempty(missing), error('Combined table missing: %s', strjoin(missing,', ')); end
 
 pairOrder   = {'R1-R2','R1-R3','R2-R3'};
-pairDisplay = {'threat–lipsmack','threat–chew','lipsmack–chew'};
+pairDisplay = {'Threat–LS','Threat–Chew','LS–Chew'};
 M = numel(pairOrder);
 
 % ---- assign Region from pattern map (first match wins) ----
@@ -359,6 +361,15 @@ combined_region.Region = region(keep);
 % ---- unique regions in the requested order ----
 regionList = unique(string(patMap(:,2)),'stable');
 
+% region colormap
+regionCmap = [0.5 0.5 0.5
+    0.4940 0.1840 0.5560	
+    0.6350 0.0780 0.1840
+    0.8500 0.3250 0.0980	
+    0.9290 0.6940 0.1250
+    ];
+
+%  
 for r = 1:numel(regionList)
     reg = regionList(r);
     T   = combined_region(strcmp(combined_region.Region, reg), :);
@@ -411,14 +422,14 @@ for r = 1:numel(regionList)
     x = (1:M).';
 
     if showPts
-        gcol = 0.7*[1 1 1];
+        gcol = regionCmap(r,:);
         for i = 1:M
             sel  = strcmp(T.Pair, pairOrder{i});
             vals = T.(effCol)(sel);
             vals = vals(isfinite(vals));
             if isempty(vals), continue; end
             jitter = (rand(size(vals))-0.5)*0.15;
-            plot(i + jitter, vals, '.', 'Color', gcol, 'MarkerSize', 24);
+            plot(i + jitter, vals, '.', 'Color', gcol, 'MarkerSize', 34);
         end
     end
 
@@ -428,7 +439,7 @@ for r = 1:numel(regionList)
     yneg    = mu_col - ci_low;
     ypos    = ci_high - mu_col;
 
-    errorbar(x, mu_col, yneg, ypos, 'o', 'LineWidth',1.8, 'CapSize',10, 'MarkerSize',6);
+    errorbar(x, mu_col, yneg, ypos, 'o', 'LineWidth',2, 'CapSize',10, 'MarkerSize',26,'Color', gcol);
 
     finiteCI = isfinite(ci_low) & isfinite(ci_high);
     rngY = diff([min(ci_low(finiteCI)), max(ci_high(finiteCI))]);
@@ -442,20 +453,25 @@ for r = 1:numel(regionList)
         else,  stars='n.s.';
         end
         yTop = ci_high(i); if ~isfinite(yTop), yTop = mu_col(i); end
-        text(x(i), yTop + 0.03*rngY, stars, 'HorizontalAlignment','center','FontWeight','bold');
+        text(x(i), yTop + 0.3*rngY, stars, 'HorizontalAlignment','center','FontSize', 18, 'FontWeight','bold');
     end
 
     xlim([0.5 M+0.5]); ylim([-1 1])
     xticks(x); xticklabels(pairDisplay);
     ylabel(ylab);
-    title(sprintf('Region: %s — median with bootstrap 95%% CI; p via Fisher''s method', reg));
-    grid on; box off;
+    title({sprintf('Region: %s — Median Spearman \\rho, bootstrap 95%% CI', reg), ...
+       'p via Fisher''s method'});    grid on; box off;
 
     annotation('textbox',[0.13 0.01 0.8 0.05], 'String', ...
         sprintf('Points = per-day estimates. Combined p via Fisher. n per pair: %s', ...
         strjoin(arrayfun(@(n)sprintf('%d',n), nPer,'UniformOutput',false), ', ')), ...
         'EdgeColor','none','HorizontalAlignment','left','FontSize',14);
-end
+    
+    plotFig = gcf; plotFig.Position = [624    86   688   780];
+    savefig(['~/Desktop/' reg{1} '_rankOrder.fig'])
+    exportgraphics(plotFig, ['~/Desktop/' reg{1} '_rankOrder.pdf'], 'ContentType', 'vector');
+
+end % end regions 
 end
 
 % ---------- helper ----------
