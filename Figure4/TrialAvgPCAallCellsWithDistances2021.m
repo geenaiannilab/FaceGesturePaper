@@ -27,6 +27,7 @@ workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis
 saveFlag = true; 
 
 regions = getChannel2CorticalRegionMapping(subject, 1);
+
 chls = 1:240;
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];

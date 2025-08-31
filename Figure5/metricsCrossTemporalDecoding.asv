@@ -1,0 +1,983 @@
+
+%% 
+close all; clear all ;
+set(0,'defaultAxesFontSize',24)
+set(0,'defaultAxesFontWeight','bold')
+
+%
+% DI = Fraction of decoding "mass" on/near the diagonal vs off-diagonal.
+% Dynamic ⇢ high DI (narrow diagonal ribbon). Stable ⇢ lower DI (broad off-diagonal generalization).
+
+% Temporal generalization width (TGW)
+% For each train time, find the full-width at half-max (FWHM) of accuracy across test times; 
+% % report the median width. Dynamic ⇢ narrow TGW.
+
+% Generalization half-life (G½)
+% Average over train times the lag delta where accuracy first drops to 50% of its peak:
+
+
+
+%% intial set-up
+subject = 'combined';
+popType = 'balanced/N_50cells';
+nIterations = 50;
+plotIndividualIterations = false; 
+binSize = 0.4;
+overlap = 'smallerOverlap';
+nUnitsPerRegion = 50;
+
+workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/CTD_' subject '/' overlap];
+
+colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
+
+%% load data 
+f2load = dir([workdir '/CTD_start1_bin' num2str(binSize) '*']);
+ctdat = load([f2load.folder '/' f2load.name]);
+
+%% channels
+arrayList = ctdat.arrayList;
+
+%% Create timebase
+
+windowsCenter = ctdat.windowsCenter; 
+time2test = -0.8:0.4:0.8; 
+if strcmp(overlap, 'smallerOverlap')
+    skipFactor = 10;
+else
+    skipFactor = 2;
+end
+
+%% calculate metrics 
+
+chance = 0.6;                 % set to your tasks chance level
+
+band   = 1;                  % half-width (in bins) of the diagonal strip you count as "on/near the diagonal3 when computing DI;                               % pick band roughly matching your temporal resolution or expected generalization (e.g., 1–2 bins for sharp, dynamic codes
+                              % larger band → more matrix “mass” counted as diagonal ⇒ higher DI; smaller band makes the metric stricter (more “dynamic” if mass is tightly on the diagonal).
+ 
+out = summarize_ctd_dynamics(ctdat, arrayList, ...
+      'chance',chance, 'band',band, 'tAxis',windowsCenter,'Colors',colorArray);
+
+%% DI comparison 
+% Build per-iteration DI vectors (set chance and diagonal band as you use in figures)
+diCell = build_di_vectors(ctdat, arrayList, 'Chance', chance, 'Band', band);
+
+% Run all pairwise, unpaired permutation comparisons
+resDI = compare_DI_unpaired_all(diCell, arrayList, 'NPerm', 20000, 'NBoot', 5000, 'Seed', 123);
+
+%% TGW comparison
+% Build per-iteration TGW vectors (choose units via tAxis)
+tgwCell = build_tgw_vectors(ctdat, arrayList, 'Chance', chance, 'TAxis', windowsCenter);
+
+% Run all pairwise comparisons (unpaired permutation)
+resTGW = compare_TGW_unpaired_all(tgwCell, arrayList, ...
+          'NPerm', 20000, 'NBoot', 5000, 'Seed', 123);
+
+%% Plot 
+% Overlay plot: DI heatmap + TGW significance glyphs
+outOverlay = plot_pairwise_DI_TGW_overlay(resDI, resTGW, ...
+                 'Alpha',0.05, 'Adjust','fdr', 'ShowValues',true, ...
+                 'Base','DI', 'FlipTGWForDynamic',true);
+
+%% Plot the actual CTDs
+for aa = 1:length(arrayList)
+
+    data = mean(ctdat.validationScoreStruct.(arrayList{aa}),3);
+    sem = std(ctdat.validationScoreStruct.(arrayList{aa}),[],3) ./ sqrt(nIterations);
+    cmax = max(sem,[],'all');
+
+    diagData = diag(data);
+    diagSEM = diag(sem);
+
+    plotFig = figure('Position',[ 476    86   964   780]);
+    zeroPos = find(windowsCenter == 0);
+    imagesc(data); hold on; 
+    line([zeroPos zeroPos], [1 length(windowsCenter)],'Color', 'w', 'LineStyle',':','LineWidth',2.5); 
+    line([1 length(windowsCenter)],[zeroPos zeroPos], 'Color', 'w', 'LineStyle',':','LineWidth',2.5); 
+
+    hold off
+    set ( gca, 'ydir', 'normal' );
+    xlabel('Generalization Time')
+    ylabel('Training Time')
+    xticks(1:skipFactor:(length(windowsCenter)))
+    xticklabels(windowsCenter(xticks))
+    yticks(1:skipFactor:(length(windowsCenter)))
+    yticklabels(windowsCenter(xticks))
+    
+    colorbar; colorbarpzn(0.5,1,'full',0.6); %colormap(jet); caxis([0.5 1]);%
+    set ( gca, 'FontSize', 24);
+    title([arrayList{aa} ' - Generalization Across Time'], 'FontSize',28)
+ 
+    plotFig = figure('units','normalized','outerposition',[  0    0.0886    0.2817    1]);
+    nSubplots = length(time2test);
+    ha = tight_subplot(nSubplots,1, 0.02, [0.05 0.03], [0.12 0.1]);
+
+    for tt = 1:length(time2test)
+        t2testIdx = find(windowsCenter >= time2test(tt),1,'first');
+        t2testPerform = data(t2testIdx,:);
+        t2testErr = sem(t2testIdx,:);
+        
+        axes(ha((length(time2test)-tt)+1))
+        errorbar(windowsCenter, diagData, diagSEM,'k','linew',2); hold on; 
+        errorbar(windowsCenter,t2testPerform, t2testErr,'Color', [0 0.4470 0.7410],'linew',2); hold off
+        xlim([-0.8 0.8])
+        str = {['Train = ' num2str(time2test(tt)) ' s']}; 
+        yyaxis right ;ylabel(str); tmp = gca; tmp.YTick = []; tmp.YLabel.Color = 'k'; tmp.FontSize = 18; tmp.FontWeight = 'bold';
+       
+        if tt > 1
+            tmp.XTickLabel = '';
+        end
+        box off
+    end
+    
+    han=axes(plotFig,'visible','off'); 
+    han.Title.Visible='on'; 
+    han.XLabel.Visible='on';
+    han.YLabel.Visible='on';
+    yyaxis right; 
+    yyaxis left; ylabel(han,'Accuracy');han.YLabel.Color = 'k';han.YLabel.FontSize = 20;
+    box off; 
+    han.YLabel.Position = [-0.1 0.5 0 ];
+
+    xlabel(han,'Test Time Bin','FontSize',20);
+    han.XLabel.Color = 'k'; 
+    han.XLabel.Position = [0.5 -0.1 0];
+
+    han.Title.Position = [0.5 1.06 0.5];    
+    title(han,'Decoder Performance','FontSize',20);
+    
+    plotFig = gcf;
+    plotFig.Color = [1 1 1 ];
+
+end
+
+
+function out = summarize_ctd_dynamics(ctdat, arrayList, varargin)
+% Compute DI, TGW, Ghalf, rank-stability for each region and plot.
+% Options: 'chance' (scalar), 'band' (int), 'tAxis' (vector), 'colors' (R×3)
+
+p = inputParser;
+addParameter(p,'chance',0,@isnumeric);
+addParameter(p,'band',1,@(x)isnumeric(x)&&isscalar(x));
+addParameter(p,'tAxis',[],@isnumeric);
+addParameter(p,'colors',[],@isnumeric);
+parse(p,varargin{:});
+chance = p.Results.chance;
+band   = p.Results.band;
+tAxis  = p.Results.tAxis;
+C      = p.Results.colors;
+
+R = numel(arrayList);
+if isempty(C)
+    C = lines(R);
+end
+
+% Collect metrics
+DI = nan(R,1); DIsem = nan(R,1);
+TGW = nan(R,1); TGWsem = nan(R,1);
+GH = nan(R,1); GHsem = nan(R,1);
+
+for r = 1:R
+    CTD = ctdat.validationScoreStruct.(arrayList{r}); % T x T x N
+    di = diagonality_index(CTD, 'band',band, 'chance',chance);
+    tgw = temporal_generalization_width(CTD, 'chance',chance, 'tAxis',tAxis);
+
+    DI(r)    = di.mean;   DIsem(r)  = di.sem;
+    TGW(r)   = tgw.mean;  TGWsem(r) = tgw.sem;
+end
+
+% ---- Plot 1: bar summary (DI, TGW, G½) ----
+% DI subplot 
+figure('Color','w','Name','CTD Dynamics Summary');
+subplot(1,2,1); hold on;
+h1 = bar(1:R, DI, 'FaceColor','flat', 'EdgeColor','none');
+h1.CData = C;                                % <-- color each bar by region
+
+% error bars (black or match bar color—pick one)
+for r = 1:R
+    errorbar(r, DI(r), DIsem(r), 'k.', 'LineWidth',3, 'CapSize',2); % black
+end
+xticks(1:R); xticklabels(arrayList); xtickangle(30);
+ylabel('Diagonality Index'); title(sprintf('Band = ±%d',band)); box off;
+
+%%
+% TGW subplot 
+subplot(1,2,2); hold on;
+h1 = bar(1:R, TGW, 'FaceColor','flat', 'EdgeColor','none');
+h1.CData = C;                                % <-- color each bar by region
+
+% error bars (black or match bar color—pick one)
+for r = 1:R
+    errorbar(r, TGW(r), TGWsem(r), 'k.', 'LineWidth',3, 'CapSize',2); % black
+end
+xticks(1:R); xticklabels(arrayList); xtickangle(30);
+if isempty(tAxis)
+    ylabel('Width (bins)');
+else
+    ylabel('Width (time)');
+end
+
+title('Temporal Generalization Width'); box off;
+
+% ---- Pack outputs ----
+out.DI = table(arrayList(:), DI, DIsem, 'VariableNames', {'Region','DI_mean','DI_sem'});
+out.TGW = table(arrayList(:), TGW, TGWsem, 'VariableNames', {'Region','TGW_mean','TGW_sem'});
+
+end
+
+function out = plot_pairwise_DI_TGW_overlay(resDI, resTGW, varargin)
+% Overlay TGW significance on a DI difference heatmap (pairwise region comparisons).
+% resDI  : output struct from compare_DI_unpaired_all
+% resTGW : output struct from compare_TGW_unpaired_all
+%
+% OPTIONS
+%   'Alpha'          : 0.05 (cluster-wise/overall alpha per metric)
+%   'Adjust'         : 'none' | 'fdr' | 'bonferroni'  (applied separately to DI & TGW)
+%   'ShowValues'     : true | false   (print DI A−B numbers in cells)
+%   'Base'           : 'DI' | 'TGW'   (which metric to use as heatmap)
+%   'FlipTGWForDynamic' : true | false (if true, “positive overlay” = A more dynamic → TGW_A < TGW_B)
+%
+% OUTPUT
+%   .regions : region labels (order used)
+%   .DiffDI, .DiffTGW : R×R differences (A−B)
+%   .P_DI, .P_TGW     : adjusted p-value matrices (two-sided)
+%   .Sig_DI, .Sig_TGW : logical significance masks (p<alpha)
+%   .table            : tidy table with raw & adjusted p-values for both metrics
+
+p = inputParser;
+addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
+addParameter(p,'Adjust','fdr',@(s)any(strcmpi(string(s),["none","fdr","bonferroni"])));
+addParameter(p,'ShowValues',true,@islogical);
+addParameter(p,'Base','DI',@(s)any(strcmpi(string(s),["di","tgw"])));
+addParameter(p,'FlipTGWForDynamic',true,@islogical);
+parse(p,varargin{:});
+alpha   = p.Results.Alpha;
+adj     = lower(string(p.Results.Adjust));
+showVal = p.Results.ShowValues;
+base    = upper(string(p.Results.Base));
+flipT   = p.Results.FlipTGWForDynamic;
+
+% ---- unify region order from both results
+regs = unique([string(resDI.table.RegionA); string(resDI.table.RegionB); ...
+               string(resTGW.table.RegionA); string(resTGW.table.RegionB)]);
+regs = sort(regs);
+R = numel(regs);
+idxOf = containers.Map(regs, num2cell(1:R));
+
+% ---- build DI matrices (Diff and p)
+DiffDI = zeros(R); Pdi = nan(R);
+T = resDI.table;
+for k=1:height(T)
+    i = idxOf(string(T.RegionA(k))); j = idxOf(string(T.RegionB(k)));
+    d = T.Diff_AminusB(k); p2 = T.p_two(k);
+    DiffDI(i,j)=d; DiffDI(j,i)=-d;
+    Pdi(i,j) = p2; Pdi(j,i) = p2;
+end
+% adjust DI p-values (upper tri only)
+tri = find(triu(true(R),1));
+rawDI = Pdi(tri);
+padjDI = adjust_p(rawDI, adj);
+P_DI = Pdi; P_DI(tri)=padjDI; P_DI = P_DI + tril(P_DI.',-1);
+Sig_DI = false(R); Sig_DI(tri) = padjDI < alpha; Sig_DI = Sig_DI | Sig_DI.';
+
+% ---- build TGW matrices (Diff and p)
+DiffTGW = zeros(R); Pt = nan(R);
+U = resTGW.table;
+for k=1:height(U)
+    i = idxOf(string(U.RegionA(k))); j = idxOf(string(U.RegionB(k)));
+    d = U.Diff_AminusB(k); p2 = U.p_two(k);
+    DiffTGW(i,j)=d; DiffTGW(j,i)=-d;
+    Pt(i,j) = p2; Pt(j,i) = p2;
+end
+rawTG = Pt(tri);
+padjTG = adjust_p(rawTG, adj);
+P_TGW = Pt; P_TGW(tri)=padjTG; P_TGW = P_TGW + tril(P_TGW.',-1);
+Sig_TGW = false(R); Sig_TGW(tri) = padjTG < alpha; Sig_TGW = Sig_TGW | Sig_TGW.';
+
+% ---- choose base heatmap (DI default)
+switch base
+    case "DI"
+        BaseDiff = DiffDI;
+        baseLabel = 'DI (A - B; higher = more dynamic)';
+    otherwise
+        BaseDiff = DiffTGW;
+        baseLabel = 'TGW (A - B; smaller = more dynamic)';
+end
+
+% ---- plotting
+figure('Color','w','Name','Pairwise overlay: DI heatmap + TGW significance');
+ax = axes; hold(ax,'on');
+
+% symmetric color limits around 0
+mx = max(abs(BaseDiff(:))); if mx==0, mx=1; end
+imagesc(ax, BaseDiff, [-mx mx]);
+colormap(ax, cmap_diverging());
+cb = colorbar(ax);
+cb.Label.String = sprintf('Mean difference (%s)', baseLabel);
+axis(ax,'equal','tight'); set(ax,'TickLength',[0 0]); box(ax,'on');
+xticks(1:R); yticks(1:R); xticklabels(regs); yticklabels(regs); xtickangle(45);
+
+title(ax, sprintf('Pairwise overlay | p<%.3g (%s adj.)', alpha, upper(adj)));
+
+% light grid
+for i=1:R
+    rectangle('Position',[i-0.5 i-0.5 1 1], 'EdgeColor',[0.85 0.85 0.85]);
+end
+
+% ---- annotate each off-diagonal cell
+for i=1:R
+    for j=1:R
+        if i==j, continue; end
+        % numeric DI value (always show DI number, even if base=TGW)
+        if showVal
+            text(j, i, sprintf('%+.2f', DiffDI(i,j)), 'HorizontalAlignment','center', ...
+                 'VerticalAlignment','middle', 'FontSize',9, 'FontWeight','bold', 'Color','k');
+        end
+        % DI stars at center-top
+        if Sig_DI(i,j)
+            stars = p_to_stars(P_DI(i,j));
+            text(j, i-0.18, stars, 'HorizontalAlignment','center', ...
+                 'VerticalAlignment','top', 'FontSize',12, 'FontWeight','bold', ...
+                 'Color','w', 'Interpreter','none');
+        end
+        % TGW triangles near top-right corner
+        if Sig_TGW(i,j)
+            % direction: A more dynamic than B iff TGW_A < TGW_B
+            a_more_dynamic = (DiffTGW(i,j) < 0);
+            mk = '^'; dy = -0.3;
+            if ~a_more_dynamic, mk = 'v'; dy = +0.3; end
+            plot(j+0.28, i+dy, mk, 'MarkerSize',8, 'MarkerFaceColor','k', 'MarkerEdgeColor','k');
+        end
+    end
+end
+
+% legend proxy
+hold on;
+plot(nan,nan,'w*','MarkerSize',10,'LineWidth',1.5);  % DI star
+plot(nan,nan,'k^','MarkerSize',8,'MarkerFaceColor','k'); % TGW A more dynamic
+plot(nan,nan,'kv','MarkerSize',8,'MarkerFaceColor','k'); % TGW B more dynamic
+legend({'DI significant','TGW: A more dynamic','TGW: B more dynamic'}, ...
+       'Location','southoutside','Orientation','horizontal');
+
+% ---- outputs
+out = struct();
+out.regions = cellstr(regs);
+out.DiffDI  = DiffDI;
+out.DiffTGW = DiffTGW;
+out.P_DI    = P_DI;
+out.P_TGW   = P_TGW;
+out.Sig_DI  = Sig_DI;
+out.Sig_TGW = Sig_TGW;
+out.table   = build_overlay_table(regs, DiffDI, P_DI, DiffTGW, P_TGW, Sig_DI, Sig_TGW);
+
+end
+
+% ---------- helpers ----------
+function padj = adjust_p(p, how)
+switch lower(string(how))
+    case "fdr"
+        padj = fdr_bh(p);
+    case "bonferroni"
+        padj = min(p * numel(p), 1);
+    otherwise
+        padj = p;
+end
+end
+
+function stars = p_to_stars(p)
+if p < 1e-3, stars='***';
+elseif p < 1e-2, stars='**';
+elseif p < 0.05, stars='*';
+else, stars=''; end
+end
+
+function padj = fdr_bh(p)
+p = p(:); n = numel(p);
+[ps,ix] = sort(p); r = (1:n)';
+padj_s = ps .* n ./ r;
+for i=n-1:-1:1, padj_s(i) = min(padj_s(i), padj_s(i+1)); end
+padj = zeros(n,1); padj(ix) = min(padj_s,1);
+end
+
+function C = cmap_diverging()
+% simple blue-white-red
+n=256;
+blu = [linspace(0,1,n/2)', linspace(0,1,n/2)', ones(n/2,1)];
+red = [ones(n/2,1), linspace(1,0,n/2)', linspace(1,0,n/2)'];
+C = [blu; red];
+end
+
+function T = build_overlay_table(regs, DiffDI, P_DI, DiffTGW, P_TGW, Sig_DI, Sig_TGW)
+pairs = nchoosek(1:numel(regs),2); rows = cell(size(pairs,1), 9);
+for k=1:size(pairs,1)
+    i=pairs(k,1); j=pairs(k,2);
+    rows(k,:) = {regs(i), regs(j), ...
+        DiffDI(i,j), P_DI(i,j), Sig_DI(i,j), ...
+        DiffTGW(i,j), P_TGW(i,j), Sig_TGW(i,j), ...
+        sign(-DiffTGW(i,j))}; % +1 if A more dynamic, -1 if B (for TGW)
+end
+T = cell2table(rows, 'VariableNames', ...
+   {'RegionA','RegionB', 'DI_Diff','DI_p_adj','DI_sig', ...
+    'TGW_Diff','TGW_p_adj','TGW_sig','TGW_direction'});
+end
+
+function di = diagonality_index(CTD, varargin)
+% DI = mass near diagonal / total mass (after baseline subtract & clipping)
+% CTD: T x T x N iterations; options: 'band' (bins), 'chance' (scalar)
+
+p = inputParser;
+addParameter(p,'band',1,@(x)isnumeric(x)&&isscalar(x));
+addParameter(p,'chance',0,@isnumeric);
+parse(p,varargin{:});
+w = p.Results.band; chance = p.Results.chance;
+
+A = max(CTD - chance, 0);                    % baseline subtract, clip
+T = size(A,1);
+diagMask = abs((1:T)' - (1:T)) <= w;         % logical T×T
+tot = squeeze(sum(sum(A,1),2));              % N×1
+on  = squeeze(sum(sum(A .* diagMask,1),2)); % N×1
+di.iter = on ./ max(tot, eps);
+di.mean = mean(di.iter,'omitnan');
+di.sem  = std(di.iter,0,'omitnan')/sqrt(numel(di.iter));
+end
+
+function tgw = temporal_generalization_width(CTD, varargin)
+% For each train time, FWHM across test times; return median per iter.
+% Options: 'chance' (scalar), 'tAxis' (time vector, else bins)
+
+p = inputParser;
+addParameter(p,'chance',0,@isnumeric);
+addParameter(p,'tAxis',[],@isnumeric);
+parse(p,varargin{:});
+chance = p.Results.chance; tAxis = p.Results.tAxis;
+
+[T,~,N] = size(CTD);
+widths = nan(N,1);
+
+for n = 1:N % each iteration 
+    A = squeeze(CTD(:,:,n)) - chance; A(A<0)=0;
+    w_i = nan(T,1);
+    for i = 1:T % time points
+        row = A(i,:);
+        if all(~isfinite(row)) || max(row)==0, continue; end
+        half = 0.5*max(row);
+        above = row >= half;
+        if ~any(above), continue; end
+        idx = find(above);
+        i0 = idx(1); i1 = idx(end);
+        if isempty(tAxis)
+            w_i(i) = i1 - i0 + 1;                         % bins
+        else
+            w_i(i) = tAxis(i1) - tAxis(i0);              % time units
+        end
+    end
+    widths(n) = median(w_i,'omitnan');
+end % end iterations 
+tgw.iter = widths;
+tgw.mean = mean(widths,'omitnan'); % over iterations 
+tgw.sem  = std(widths,0,'omitnan')/sqrt(N); % over iterations 
+end
+
+function out = compare_DI_unpaired_all(diCell, names, varargin)
+% Run unpaired label-shuffle permutation for DI across all 2-way region pairs.
+% INPUTS
+%   diCell : R-by-1 cell, each a vector of DI values (per iteration) for a region
+%   names  : R-by-1 cellstr/string array of region names
+% OPTIONS
+%   'NPerm' (10000), 'NBoot' (5000), 'Seed' ([])
+
+p = inputParser;
+addParameter(p,'NPerm',10000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
+addParameter(p,'NBoot',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=500);
+addParameter(p,'Seed',[],@(x)isempty(x)||isscalar(x));
+parse(p,varargin{:});
+nPerm = p.Results.NPerm; nBoot = p.Results.NBoot; seed = p.Results.Seed;
+
+if isstring(names) || ischar(names), names = cellstr(names); end
+R = numel(diCell);
+pairs = nchoosek(1:R,2);
+
+rows = [];
+pairStats = struct([]);
+for k = 1:size(pairs,1)
+    i = pairs(k,1); j = pairs(k,2);
+    mA = diCell{i}; mB = diCell{j};
+
+    stats = permtest_unpaired_mean_diff(mA, mB, ...
+             'NPerm', nPerm, 'NBoot', nBoot, 'Seed', seed);
+
+    rows = [rows; {names{i}, names{j}, ...
+                   mean(mA,'omitnan'), mean(mB,'omitnan'), stats.diff, ...
+                   stats.p_two, stats.p_right, stats.p_left, ...
+                   stats.nA, stats.nB, ...
+                   stats.ciA(1), stats.ciA(2), stats.ciB(1), stats.ciB(2), ...
+                   stats.ciDiff(1), stats.ciDiff(2)}];
+
+    pairStats(k).RegionA = names{i};
+    pairStats(k).RegionB = names{j};
+    pairStats(k).stats   = stats;
+end
+
+T = cell2table(rows, 'VariableNames', { ...
+    'RegionA','RegionB','MeanA','MeanB','Diff_AminusB', ...
+    'p_two','p_right','p_left','nA','nB', ...
+    'CI_A_low','CI_A_high','CI_B_low','CI_B_high','CI_Diff_low','CI_Diff_high'});
+
+out = struct();
+out.table = T;            % tidy summary for all pairs
+out.pairs = pairs;        % indices into 'names'
+out.stats = pairStats;    % raw stats structs per pair
+end
+
+function out = compare_TGW_unpaired_all(tgwCell, names, varargin)
+% Run unpaired permutation comparisons of TGW for all 2-way region pairs.
+% INPUTS
+%   tgwCell : R-by-1 cell, each a vector of TGW values (per iteration) for a region
+%   names   : R-by-1 cellstr/string array of region names
+% OPTIONS
+%   'NPerm' (10000), 'NBoot' (5000), 'Seed' ([])
+
+p = inputParser;
+addParameter(p,'NPerm',10000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
+addParameter(p,'NBoot',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=500);
+addParameter(p,'Seed',[],@(x)isempty(x)||isscalar(x));
+parse(p,varargin{:});
+nPerm = p.Results.NPerm; nBoot = p.Results.NBoot; seed = p.Results.Seed;
+
+if isstring(names) || ischar(names), names = cellstr(names); end
+R = numel(tgwCell);
+pairs = nchoosek(1:R,2);
+
+rows = [];
+pairStats = struct([]);
+for k = 1:size(pairs,1)
+    i = pairs(k,1); j = pairs(k,2);
+    mA = tgwCell{i}; mB = tgwCell{j};
+
+    % Unpaired permutation on mean difference (A - B)
+    stats = permtest_unpaired_mean_diff(mA, mB, ...
+             'NPerm', nPerm, 'NBoot', nBoot, 'Seed', seed);
+
+    % Assemble a tidy row
+    rows = [rows; {names{i}, names{j}, ...
+                   mean(mA,'omitnan'), mean(mB,'omitnan'), stats.diff, ...
+                   stats.p_two, stats.p_right, stats.p_left, ...
+                   stats.nA, stats.nB, ...
+                   stats.ciA(1), stats.ciA(2), stats.ciB(1), stats.ciB(2), ...
+                   stats.ciDiff(1), stats.ciDiff(2)}]; %#ok<AGROW>
+
+    pairStats(k).RegionA = names{i};
+    pairStats(k).RegionB = names{j};
+    pairStats(k).stats   = stats;
+end
+
+T = cell2table(rows, 'VariableNames', { ...
+    'RegionA','RegionB','MeanA','MeanB','Diff_AminusB', ...
+    'p_two','p_right','p_left','nA','nB', ...
+    'CI_A_low','CI_A_high','CI_B_low','CI_B_high','CI_Diff_low','CI_Diff_high'});
+
+out = struct();
+out.table = T;            % tidy summary for all pairs
+out.pairs = pairs;        % indices into 'names'
+out.stats = pairStats;    % raw stats structs per pair
+end
+
+function diCell = build_di_vectors(ctdat, arrayList, varargin)
+% diCell{r} = vector of DI values (one per iteration) for region r
+% ctdat.validationScoreStruct.(arrayList{r}) is T x T x N (accuracy)
+% Options: 'Chance' (scalar), 'Band' (half-width in bins)
+
+p = inputParser;
+addParameter(p,'Chance',0,@isnumeric);
+addParameter(p,'Band',1,@(x)isnumeric(x)&&isscalar(x)&&x>=0);
+parse(p,varargin{:});
+chance = p.Results.Chance;
+band   = p.Results.Band;
+
+R = numel(arrayList);
+diCell = cell(R,1);
+for r = 1:R
+    CTD = ctdat.validationScoreStruct.(arrayList{r});   % T x T x N
+    N   = size(CTD,3);
+    m   = nan(N,1);
+    for n = 1:N
+        di = diagonality_index(CTD(:,:,n), 'band', band, 'chance', chance);
+        m(n) = di.mean;   % scalar for that iteration
+    end
+    diCell{r} = m;
+end
+end
+
+function tgwCell = build_tgw_vectors(ctdat, arrayList, varargin)
+% tgwCell{r} = vector of TGW values (one per iteration) for region r
+% ctdat.validationScoreStruct.(arrayList{r}) is T x T x N (accuracy)
+% Options: 'Chance' (scalar), 'TAxis' (vector; [] -> widths in bins)
+
+p = inputParser;
+addParameter(p,'Chance',0,@isnumeric);
+addParameter(p,'TAxis',[],@isnumeric);
+parse(p,varargin{:});
+chance = p.Results.Chance;
+tAxis  = p.Results.TAxis;
+
+R = numel(arrayList);
+tgwCell = cell(R,1);
+for r = 1:R
+    CTD = ctdat.validationScoreStruct.(arrayList{r});   % T x T x N
+    % Call once per region; helper returns per-iteration widths in tgw.iter
+    tgw = temporal_generalization_width(CTD, 'chance', chance, 'tAxis', tAxis);
+    % tgw.iter is N×1, where each entry is the median FWHM across train times
+    tgwCell{r} = tgw.iter(:);
+end
+end
+
+function out = permtest_unpaired_mean_diff(mA, mB, varargin)
+% Unpaired permutation test on mean(mA) - mean(mB).
+% Returns two-sided and one-sided p-values, plus basic summaries.
+
+p = inputParser;
+addParameter(p,'NPerm',10000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
+addParameter(p,'Seed',[],@(x)isempty(x)||isscalar(x));
+addParameter(p,'NBoot',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=500);
+parse(p,varargin{:});
+nPerm = p.Results.NPerm;
+seed  = p.Results.Seed;
+nBoot = p.Results.NBoot;
+
+if ~isempty(seed), rng(seed); end
+
+x = mA(:); x = x(isfinite(x));
+y = mB(:); y = y(isfinite(y));
+nA = numel(x); nB = numel(y);
+if nA<2 || nB<2, error('Need >=2 iterations per group.'); end
+
+obs = mean(x) - mean(y);
+X = [x; y];
+null = zeros(nPerm,1);
+for i = 1:nPerm
+    idx = randperm(nA+nB);
+    XA  = X(idx(1:nA));
+    XB  = X(idx(nA+1:end));
+    null(i) = mean(XA) - mean(XB);
+end
+
+p_two   = (sum(abs(null) >= abs(obs)) + 1) / (nPerm + 1);
+p_right = (sum(null >= obs) + 1) / (nPerm + 1);
+p_left  = (sum(null <= obs) + 1) / (nPerm + 1);
+
+% Bootstrap 95% CIs
+ciA = boot_ci_mean(x, nBoot);
+ciB = boot_ci_mean(y, nBoot);
+ciD = boot_ci_diff_unpaired(x, y, nBoot);
+
+out = struct();
+out.nA = nA; out.nB = nB;
+out.meanA = mean(x); out.meanB = mean(y);
+out.diff  = obs;
+out.p_two = p_two; out.p_right = p_right; out.p_left = p_left;
+out.null  = null;
+out.ciA   = ciA; out.ciB = ciB; out.ciDiff = ciD;
+end
+
+function ci = boot_ci_mean(v, B)
+N = numel(v); boots = zeros(B,1);
+for b=1:B
+    idx = randi(N,[N,1]);
+    boots(b) = mean(v(idx));
+end
+ci = prctile(boots,[2.5 97.5]);
+end
+
+function ci = boot_ci_diff_unpaired(x, y, B)
+nA = numel(x); nB = numel(y);
+boots = zeros(B,1);
+for b=1:B
+    xa = x(randi(nA,[nA,1]));
+    yb = y(randi(nB,[nB,1]));
+    boots(b) = mean(xa) - mean(yb);
+end
+ci = prctile(boots,[2.5 97.5]);
+end
+
+function out = plot_pairwise_metric_matrix(res, varargin)
+% Plot pairwise mean differences and significance from compare_*_unpaired_all().
+%
+% INPUT
+%   res.table must contain columns:
+%     RegionA, RegionB, MeanA, MeanB, Diff_AminusB, p_two  (plus CIs, etc.)
+%
+% OPTIONS
+%   'MetricLabel' : e.g., 'DI (higher = more dynamic)'  [default: 'Metric']
+%   'Alpha'       : significance level (default 0.05)
+%   'Adjust'      : 'none' | 'fdr' | 'bonferroni' (default 'none')
+%   'Colormap'    : name or Mx3 (default: red-blue diverging)
+%   'ShowValues'  : true/false to print numeric diffs in cells (default true)
+%
+% OUTPUT (struct)
+%   .regions  : cellstr of region names (plot order)
+%   .DiffMat  : R x R matrix with A-B mean differences (diag = 0)
+%   .PvalMat  : R x R matrix with (adjusted) p-values (two-sided)
+%   .SigMat   : logical matrix where p < alpha
+%   .p_table  : table of pairs with raw & adjusted p-values
+
+p = inputParser;
+addParameter(p,'MetricLabel','Metric',@(s)ischar(s)||isstring(s));
+addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
+addParameter(p,'Adjust','none',@(s)any(strcmpi(string(s),["none","fdr","bonferroni"])));
+addParameter(p,'Colormap',[],@(c)ischar(c)||isstring(c)||ismatrix(c));
+addParameter(p,'ShowValues',true,@islogical);
+parse(p,varargin{:});
+metricLabel = string(p.Results.MetricLabel);
+alpha = p.Results.Alpha;
+adj   = lower(string(p.Results.Adjust));
+cmap  = p.Results.Colormap;
+showVals = p.Results.ShowValues;
+
+T = res.table;
+% Unique region list in sorted order
+regs = unique([string(T.RegionA); string(T.RegionB)]);
+[regs, ord] = sort(regs); %#ok<ASGLU>
+R = numel(regs);
+
+% Map region name -> index
+idxOf = containers.Map(regs, num2cell(1:R));
+
+% Build raw matrices
+Diff = zeros(R); P = nan(R);
+for k = 1:height(T)
+    A = string(T.RegionA(k)); B = string(T.RegionB(k));
+    i = idxOf(A); j = idxOf(B);
+    d = T.Diff_AminusB(k);
+    p2 = T.p_two(k);
+    Diff(i,j) = d;
+    Diff(j,i) = -d;
+    P(i,j) = p2; P(j,i) = p2;
+end
+
+% Adjust p-values across all pairs (upper triangle only)
+tri = find(triu(true(R),1));
+raw = P(tri);
+switch adj
+    case "fdr"
+        padj = fdr_bh(raw);
+    case "bonferroni"
+        padj = min(raw * numel(raw), 1);
+    otherwise
+        padj = raw;
+end
+P_adj = P;
+P_adj(tri) = padj; P_adj = min(P_adj,1); P_adj = max(P_adj,0); % mirror
+P_adj = P_adj + tril(P_adj.',-1); % symmetric; keep NaN on diag
+Sig = false(R); Sig(tri) = padj < alpha; Sig = Sig | Sig.'; % no diag
+
+% Colormap (diverging, centered at 0)
+if isempty(cmap)
+    % blue-white-red
+    n=256; r = (0:n-1)'/(n-1);
+    blu = [linspace(0,1,n/2)', linspace(0,1,n/2)', ones(n/2,1)];
+    red = [ones(n/2,1), linspace(1,0,n/2)', linspace(1,0,n/2)'];
+    cmap = [blu; red];
+end
+
+% Plot
+figure('Color','w','Name',sprintf('Pairwise %s comparisons', metricLabel));
+ax = axes; hold(ax,'on');
+
+% Symmetric color limits around 0
+mx = max(abs(Diff(:)));  if mx==0, mx = 1; end
+imagesc(ax, Diff, [-mx mx]); colormap(ax, cmap);
+cb = colorbar(ax); cb.Label.String = sprintf('Mean difference (A - B) of %s', metricLabel);
+axis(ax,'equal','tight');
+xticks(1:R); yticks(1:R);
+xticklabels(regs); yticklabels(regs);
+xtickangle(45);
+title(ax, sprintf('Pairwise differences — %s | p<%.3g (%s)', metricLabel, alpha, upper(adj)));
+set(ax,'TickLength',[0 0]); box(ax,'on');
+
+% Zero diagonal line
+for i=1:R, rectangle('Position',[i-0.5 i-0.5 1 1],'EdgeColor',[0.8 0.8 0.8]); end
+
+% Annotations: numbers and significance stars (upper triangle)
+for i=1:R
+    for j=1:R
+        if i==j, continue; end
+        val = Diff(i,j);
+        if showVals
+            text(j, i, sprintf('%+.2f', val), 'HorizontalAlignment','center', ...
+                 'VerticalAlignment','middle', 'FontSize',20, 'Color','k', ...
+                 'FontWeight', 'bold', 'Interpreter','none');
+        end
+        if Sig(i,j)
+            % Significance stars based on adjusted p
+            p_ij = P_adj(i,j);
+            stars = p_to_stars(p_ij);
+            text(j, i, stars, 'HorizontalAlignment','right', ...
+                 'VerticalAlignment','top', 'FontSize',24, 'Color','k', 'FontWeight','bold');
+        end
+    end
+end
+
+% Output
+out = struct();
+out.regions = cellstr(regs);
+out.DiffMat = Diff;
+out.PvalMat = P_adj;
+out.SigMat  = Sig;
+
+% Tidy table of adjusted p-values
+pairs = nchoosek(1:R,2);
+rows = cell(size(pairs,1), 6);
+for k = 1:size(pairs,1)
+    i = pairs(k,1); j = pairs(k,2);
+    rows(k,:) = {regs(i), regs(j), Diff(i,j), P(i,j), P_adj(i,j), Sig(i,j)};
+end
+out.p_table = cell2table(rows, 'VariableNames', ...
+    {'RegionA','RegionB','Diff_AminusB','p_two_raw','p_adj','is_sig'});
+
+end
+
+function out = plot_pairwise_TGW_matrix(res, varargin)
+% Plot pairwise mean differences and significance for TGW results.
+% INPUT: res = compare_TGW_unpaired_all(...) output
+%
+% OPTIONS
+%   'Alpha'          : significance level (default 0.05)
+%   'Adjust'         : 'none' | 'fdr' | 'bonferroni' (default 'none')
+%   'Colormap'       : name or Mx3 (default diverging blue-red)
+%   'ShowValues'     : true/false (default true)  % print A−B in each cell
+%   'FlipForDynamic' : true/false (default false) % if true, plot (B−A) so + means A more dynamic
+%
+% OUTPUT
+%   .regions, .DiffMat (A−B raw), .PvalMat (adj), .SigMat, .p_table
+
+p = inputParser;
+addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
+addParameter(p,'Adjust','none',@(s)any(strcmpi(string(s),["none","fdr","bonferroni"])));
+addParameter(p,'Colormap',[],@(c)ischar(c)||isstring(c)||ismatrix(c));
+addParameter(p,'ShowValues',true,@islogical);
+addParameter(p,'FlipForDynamic',false,@islogical);
+parse(p,varargin{:});
+alpha = p.Results.Alpha;
+adj   = lower(string(p.Results.Adjust));
+cmap  = p.Results.Colormap;
+showVals = p.Results.ShowValues;
+flipDyn  = p.Results.FlipForDynamic;
+
+T = res.table;
+regs = unique([string(T.RegionA); string(T.RegionB)]);
+[regs,~] = sort(regs);
+R = numel(regs);
+idxOf = containers.Map(regs, num2cell(1:R));
+
+% Build matrices: raw differences (A−B) and two-sided p
+Diff = zeros(R); P = nan(R);
+for k = 1:height(T)
+    i = idxOf(string(T.RegionA(k)));
+    j = idxOf(string(T.RegionB(k)));
+    d = T.Diff_AminusB(k); p2 = T.p_two(k);
+    Diff(i,j)=d; Diff(j,i)=-d; P(i,j)=p2; P(j,i)=p2;
+end
+
+% Adjust p-values across all pairs (upper triangle)
+tri = find(triu(true(R),1));
+raw = P(tri);
+switch adj
+    case "fdr",        padj = fdr_bh(raw);
+    case "bonferroni", padj = min(raw*numel(raw), 1);
+    otherwise,         padj = raw;
+end
+P_adj = P; P_adj(tri)=padj; P_adj = P_adj + tril(P_adj.',-1);
+
+% What to plot: either raw A−B, or flipped so + means “A more dynamic”
+PlotDiff = Diff;
+if flipDyn
+    PlotDiff = -Diff; % since smaller TGW = more dynamic
+end
+
+% Colormap
+if isempty(cmap)
+    n=256;
+    blu = [linspace(0,1,n/2)', linspace(0,1,n/2)', ones(n/2,1)];
+    red = [ones(n/2,1), linspace(1,0,n/2)', linspace(1,0,n/2)'];
+    cmap = [blu; red];
+end
+
+% Plot
+figure('Color','w','Name','Pairwise TGW comparisons');
+ax = axes; hold(ax,'on');
+mx = max(abs(PlotDiff(:))); if mx==0, mx=1; end
+imagesc(ax, PlotDiff, [-mx mx]); colormap(ax, cmap);
+cb = colorbar(ax);
+if flipDyn
+    cb.Label.String = 'Signed diff (B−A) so + = A more dynamic (TGW smaller)';
+else
+    cb.Label.String = 'Mean difference (A−B) TGW';
+end
+axis(ax,'equal','tight'); set(ax,'TickLength',[0 0]); box(ax,'on');
+xticks(1:R); yticks(1:R); xticklabels(regs); yticklabels(regs); xtickangle(45);
+
+title(ax, sprintf('Pairwise TGW (smaller = more dynamic) | p<%.3g (%s)', alpha, upper(adj)));
+
+% grid boxes
+for i=1:R, rectangle('Position',[i-0.5 i-0.5 1 1],'EdgeColor',[0.85 0.85 0.85]); end
+
+% Significance stars + numeric values
+Sig = false(R); Sig(tri) = (padj < alpha); Sig = Sig | Sig.';
+for i=1:R
+    for j=1:R
+        if i==j, continue; end
+        if showVals
+            text(j,i,sprintf('%+.2f',Diff(i,j)), 'HorizontalAlignment','center', ...
+                 'VerticalAlignment','middle','FontSize',20,'FontWeight','bold','Color','k');
+        end
+        if Sig(i,j)
+            stars = p_to_stars(P_adj(i,j));
+            text(j,i,stars,'HorizontalAlignment','right','VerticalAlignment','top', ...
+                 'FontSize',24,'FontWeight','bold','Color','k');
+        end
+    end
+end
+
+% Outputs
+out = struct();
+out.regions = cellstr(regs);
+out.DiffMat = Diff;          % raw A−B TGW
+out.PvalMat = P_adj;         % adjusted p
+out.SigMat  = Sig;
+
+pairs = nchoosek(1:R,2);
+rows = cell(size(pairs,1),6);
+for k=1:size(pairs,1)
+    i=pairs(k,1); j=pairs(k,2);
+    rows(k,:) = {regs(i), regs(j), Diff(i,j), P(i,j), P_adj(i,j), Sig(i,j)};
+end
+out.p_table = cell2table(rows, 'VariableNames', ...
+    {'RegionA','RegionB','Diff_AminusB','p_two_raw','p_adj','is_sig'});
+
+end
+
+function stars = p_to_stars(p)
+if p < 1e-3
+    stars = '***';
+elseif p < 1e-2
+    stars = '**';
+elseif p < 0.05
+    stars = '*';
+else
+    stars = '';
+end
+end
+
+function padj = fdr_bh(p)
+% Benjamini-Hochberg FDR correction (vector p -> vector padj)
+p = p(:); n = numel(p);
+[ps, ix] = sort(p);
+rank = (1:n)';
+padj_s = ps .* n ./ rank;
+% enforce monotonicity
+for i = n-1:-1:1
+    padj_s(i) = min(padj_s(i), padj_s(i+1));
+end
+padj = zeros(n,1); padj(ix) = min(padj_s, 1);
+end
+
+

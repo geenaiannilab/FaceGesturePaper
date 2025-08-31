@@ -6,7 +6,7 @@
 % velocity dimensions are timepoint x cumulative dimensionality x iteration
 
 clear all;
-set(0,'defaultAxesFontSize',24)
+set(0,'defaultAxesFontSize',14)
 set(0,'defaultAxesFontWeight','bold')
 
 subject2analyze ={'combined'};
@@ -231,38 +231,40 @@ for dd = 1:length(dates2analyze)
     end % end regions 
 end % end dates 
 
-%%
+%
 figure; 
 
+maxDim = data.allDataOut.(regions{rr}).nDimGreater90;
 
-    maxDim = data.allDataOut.(regions{rr}).nDimGreater90;
- 
-    for rr = 1:length(regions)-1
-        
-       %thisPlot = 5-rr;
-       subplot(2,2,rr)
+for rr = 1:length(regions)
 
-        meanDistanceAverage = mean(pooledData.(regions{rr}).distanceAverage,2);
-        semDistanceAverage = (std(pooledData.(regions{rr}).distanceAverage,[],2)) ./sqrt(length(dates2analyze));
-
-        meanDistanceLSVCh = mean(pooledData.(regions{rr}).distanceLSVCh,2);
-        semDistanceLSVCh = (std(pooledData.(regions{rr}).distanceLSVCh,[],2)) ./sqrt(length(dates2analyze));
-        
-        meanDistanceThrVLS = mean(pooledData.(regions{rr}).distanceThrVLS,2);
-        semDistanceThrVLS = (std(pooledData.(regions{rr}).distanceThrVLS,[],2)) ./sqrt(length(dates2analyze));
-        
-        meanDistanceThrVCh = mean(pooledData.(regions{rr}).distanceThrVCh,2);
-        semDistanceThrVCh = (std(pooledData.(regions{rr}).distanceThrVCh,[],2)) ./sqrt(length(dates2analyze));
-
-        errorbar(data.taxis2take,meanDistanceThrVLS,2*semDistanceThrVLS,'Color',[0.4660 0.6740 0.1880],'linew',1); hold on;
-        errorbar(data.taxis2take,meanDistanceThrVCh,2*semDistanceThrVCh,'Color',[0.3010 0.7450 0.9330],'linew',1); hold on;
-        errorbar(data.taxis2take,meanDistanceLSVCh,2*semDistanceLSVCh,'Color',[0.6350 0.0780 0.1840],'linew',1); hold on;
-        plot(data.taxis2take,meanDistanceAverage,'k','linew',2); hold off;
-        title([regions{rr}])
-        xlabel('Time,s'); ylabel('Distance, au')
-
+    if rr < 5
+        subplot(2,2,rr)
+    else
+        figure ;
     end
-    xlabel('Time'), ylabel('Distance, au')
-    sgtitle(['Euclidean Distances Between Neural Trajectories (Single Recordings)'],'FontSize',28)
-    legend('Thr-LS','Thr-Ch','LS-Ch','Avg')
-    %%
+
+    meanDistanceAverage = mean(pooledData.(regions{rr}).distanceAverage,2);
+    semDistanceAverage = (std(pooledData.(regions{rr}).distanceAverage,[],2)) ./sqrt(length(dates2analyze));
+
+    meanDistanceLSVCh = mean(pooledData.(regions{rr}).distanceLSVCh,2);
+    semDistanceLSVCh = (std(pooledData.(regions{rr}).distanceLSVCh,[],2)) ./sqrt(length(dates2analyze));
+
+    meanDistanceThrVLS = mean(pooledData.(regions{rr}).distanceThrVLS,2);
+    semDistanceThrVLS = (std(pooledData.(regions{rr}).distanceThrVLS,[],2)) ./sqrt(length(dates2analyze));
+
+    meanDistanceThrVCh = mean(pooledData.(regions{rr}).distanceThrVCh,2);
+    semDistanceThrVCh = (std(pooledData.(regions{rr}).distanceThrVCh,[],2)) ./sqrt(length(dates2analyze));
+
+    errorbar(data.taxis2take,meanDistanceThrVLS,semDistanceThrVLS,'Color',[0.4660 0.6740 0.1880],'linew',1); hold on;
+    errorbar(data.taxis2take,meanDistanceThrVCh,semDistanceThrVCh,'Color',[0.3010 0.7450 0.9330],'linew',1); hold on;
+    errorbar(data.taxis2take,meanDistanceLSVCh,semDistanceLSVCh,'Color',[0.6350 0.0780 0.1840],'linew',1); hold on;
+    errorbar(data.taxis2take,meanDistanceAverage,semDistanceAverage,'k','linew',2); hold off;
+    title([regions{rr}],'FontSize',28)
+    xlabel('Time,s'); ylabel('Distance, au')
+
+end
+xlabel('Time'), ylabel('Distance, au')
+sgtitle(['Euclidean Distances Between Neural Trajectories (Single Recordings)'],'FontSize',28)
+legend('Thr-LS','Thr-Ch','LS-Ch','Avg')
+%%

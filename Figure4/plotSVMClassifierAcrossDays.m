@@ -9,7 +9,7 @@ windowShiftSize = 0.05;
 errorType = 1; % 1 = SEM across iter, 2 = mean SEM across iters, 3 = std across all iters 
 
 %% -------- Cluster-based permutation parameters --------
-alpha_cf = 0.05;     % cluster-forming p-threshold (per-time)
+alpha_cf = 0.01;     % cluster-forming p-threshold (per-time)
 nPerm    = 10000;     % number of permutations for max cluster mass null
 useDirectionalBetweenShading = false;  % true: shade by winner color; false: blended color
 
