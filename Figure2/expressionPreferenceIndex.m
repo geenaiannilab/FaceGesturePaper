@@ -20,11 +20,11 @@ close all;
 clear all;
 
 
-date = '210805'; %
-subject ='Barney'; %
+date = '171128'; %
+subject ='Thor'; %
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
-chls = 1:240;
-subsessions2plot = [9 10 11 12 14];%
+chls = 1:192;
+subsessions2plot = [1 2 4 5];%
 bhvs2plot = [1 2 4];
 
 minRestFlag = 1;
@@ -32,11 +32,11 @@ minRest = 1; % in sec; minimal rest prior to move onset (trials to include)
 
 colors = 'rbmgc';
 saveFlag = 1;
-threshlowFRFlag = 0;
-threshlowFR = 0.1;
+threshlowFRFlag = 1;
+threshlowFR = 3;
 
 win = 0.001; % in sec
-tmin = 1; %0.5;
+tmin = 0.5; 
 tmax = 1; %0.5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -178,22 +178,22 @@ for i = 1:length(bhvs2plot)
     allCellsTrialAvgResponse(i).nReps = sum(allTrials.trialType == bhvs2plot(i));
 end
 
-% mean FRs per cell, per bhv 
-% for bhv = 1:length(bhvs2plot)
-%     meanFRs(:,bhv) = mean(allCellsTrialAvgResponse(bhv).bhv,1);
-% end
+%mean FRs per cell, per bhv 
+for bhv = 1:length(bhvs2plot)
+    meanFRs(:,bhv) = mean(allCellsTrialAvgResponse(bhv).bhv,1);
+end
 
-% remove low FR neurons 
-% if threshlowFRFlag
-%     thrCells2use = ~sum(meanFRs >= threshlowFR,2) == 0;
-%     spikeLabels = spikeLabels(thrCells2use,:);
-%     spikeLabels2plot = spikeLabels2plot(thrCells2use,:);
-%     
-%     for i = 1:length(bhvs2plot)
-%         allCellsTrialAvgResponse(i).bhv = allCellsTrialAvgResponse(i).bhv(:,thrCells2use);
-%     end
-%     
-% end
+%remove low FR neurons 
+if threshlowFRFlag
+    thrCells2use = ~sum(meanFRs >= threshlowFR,2) == 0;
+    spikeLabels = spikeLabels(thrCells2use,:);
+    spikeLabels2plot = spikeLabels2plot(thrCells2use,:);
+    
+    for i = 1:length(bhvs2plot)
+        allCellsTrialAvgResponse(i).bhv = allCellsTrialAvgResponse(i).bhv(:,thrCells2use);
+    end
+    
+end
 
 % assign cortical label 
 [regions] = getChannel2CorticalRegionMapping(subject, 1);
@@ -215,8 +215,8 @@ for unit = 1:length(spikeLabels2plot)
 
 end
 
-allSpikesAllSubs.binnedSpikes =  allSpikesAllSubs.binnedSpikes(:,bins2take,:);
-save([workdir '/binnedSpikesForMI.mat'],'allTrials', 'allSpikesAllSubs', 'spikeLabels', 'spikeLabels2plot','cortRegion','taxis2take','subject','date');
+%allSpikesAllSubs.binnedSpikes =  allSpikesAllSubs.binnedSpikes(:,bins2take,:);
+%save([workdir '/binnedSpikesForMI.mat'],'allTrials', 'allSpikesAllSubs', 'spikeLabels', 'spikeLabels2plot','cortRegion','taxis2take','subject','date');
 
 % finally do the preference index calculation
 Ris = meanFRs(thrCells2use,:);

@@ -12,7 +12,7 @@ set(0,'defaultAxesFontWeight', 'bold'); % bc im blind
 
 % define the dataset you are running
 thisSubj = 'combined';
-pseudoPop = 'LSOnly/balanced'; % vs 'unbalanced'
+pseudoPop = 'ThrOnly/balanced'; % vs 'unbalanced'
 subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
 nIterations = 25; % pseduopopulations
 popSize = '50'; % nCells

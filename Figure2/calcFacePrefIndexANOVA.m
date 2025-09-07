@@ -34,7 +34,7 @@ cortRegionOut = [];
 FEPout = [];
 meanFRsOut = [];
 
-for ss = 1%:length(subjects)
+for ss = 1:length(subjects)
     if strcmpi(subjects{ss},'Barney')
         data = barneyRawData;
     elseif strcmpi(subjects{ss},'Thor')
@@ -55,7 +55,7 @@ end
 
 % run 1 way anova for effect of cortical region on FEP 
 % and run post-hoc tests 
-[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(FEPout, cortRegionOut,'off');
+[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(FEPout, cortRegionOut,'off')
 [c_oneway,m_oneway] = multcompare(STATS_oneway);
 
 % run 2 way anova for effect of cortical region, expresison type, on mean

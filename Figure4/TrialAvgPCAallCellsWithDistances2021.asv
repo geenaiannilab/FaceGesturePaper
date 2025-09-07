@@ -24,7 +24,7 @@ set(0,'defaultAxesFontWeight','bold')
 date = '210704';
 subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
-saveFlag = true; 
+saveFlag = false; 
 
 regions = getChannel2CorticalRegionMapping(subject, 1);
 
@@ -297,12 +297,6 @@ end
 % ============================
 % SHUFFLE-BASED SIGNIFICANCE
 % ============================
-
-% Example: significance mask for M1, Threat vs Chew
-% shuffleStats.M1.ThrVCh.sig_fdr   -> [T x 1] logical
-% shuffleStats.M1.ThrVCh.p_fdr     -> FDR p-values
-% shuffleStats.M1.ThrVCh.z         -> z-score vs null
-
 cfg = struct();
 cfg.nShuf       = 1000;      % number of label shuffles
 cfg.alphaFDR    = 0.05;      % FDR target per region×pair
@@ -315,45 +309,33 @@ cfg.rngSeed     = 13;        % for reproducibility
     regions, bhvs2plot, spikeLabels2plot, bins2take, taxis2take, ...
     cfg);
 
+% Example: significance mask for M1, Threat vs Chew
+% shuffleStats.M1.ThrVCh.sig_fdr   -> [T x 1] logical
+% shuffleStats.M1.ThrVCh.p_fdr     -> FDR p-values
+% shuffleStats.M1.ThrVCh.z         -> z-score vs null
+
 if saveFlag
     save([workdir '/neuralTraj_' regions{rr}.label '.mat'], 'allDataOut',...
-        'date','subject','subsessions2plot','bhvs2plot','win','tmin','tmax','taxis2take',...
-        'shuffleStats','shuffleNull','cfg');
+        'date','subject','subsessions2plot','bhvs2plot','win','tmin','tmax','taxis2take');
 end
 
 %%%%%%%%%%
 %%%%%%%% plotting PCA results
 %%
-
 for rr = 1:length(regions)
 
     latent = allDataOut.(regions{rr}.label).latent;
     score = allDataOut.(regions{rr}.label).score;
     maxDim = allDataOut.(regions{rr}.label).nDimGreater90;
 
-    %% eigenvalues
-%     fig = figure;
-%     plot(cumsum(latent/sum(latent)), 'ok','MarkerFaceColor','k')
-%     xlabel('PC'); ylabel('% variance'); xlim([0 80]);
-%     title(['Region ' regions{rr}.label 'Cumulative Variance Explained']);
+    % eigenvalues
+    fig = figure;
+    plot(cumsum(latent/sum(latent)), 'ok','MarkerFaceColor','k')
+    xlabel('PC'); ylabel('% variance'); xlim([0 80]);
+    title(['Region ' regions{rr}.label 'Cumulative Variance Explained']);
 
-    %% visualize each PC, for each bhv
-    figure; title(['Region : ' regions{rr}.label])
-    colors = 'rbg';
-    for PC = 1:3
-        start = 1;
-        for i = 1:length(bhvs2plot)
-            stop = length(taxis2take)*i;
-            PrincipleAxis = score(start:stop,PC);
-            subplot(1,3,PC);
-            plot(taxis2take,PrincipleAxis, colors(i), 'LineWidth', 6); xlabel('Time (sec)'); ylabel('a.u.'); title(['PC' num2str(PC)'])
-            hold on
-            start = start + length(taxis2take);
-        end
-    end
-
-    %% plot per TimePt data projected onto first 3 PCs, labeled by timebin
-     %colorAxis = repmat(taxis2take,numel(score(:,1)),1);
+    % plot per TimePt data projected onto first 3 PCs, labeled by timebin
+%     colorAxis = repmat(taxis2take,numel(score(:,1)),1);
 %     colorAxis = colorAxis(1,:); markerSize = 36;
 %     fig = figure;
 %     start = 1;
@@ -375,7 +357,8 @@ for rr = 1:length(regions)
 %     %saveas(fig, [outdir '/' subject '_' date '_' region  '_TimeNeuralTrajs.png']);
 %     %savefig(fig, [outdir '/' subject '_' date '_' region  '_TimeNeuralTrajs.fig']);
 
-    %% perTimePt data projected onto PCs 1-3; labeled by bhvtype
+    %%
+    % perTimePt data projected onto PCs 1-3; labeled by bhvtype
    
     markerType = 'osd*.';
     markerSize = 300;
@@ -400,20 +383,18 @@ for rr = 1:length(regions)
     title(['Region: ' regions{rr}.label ' Facial Gesture Neural Trajectories']);
     %legend('Threat','Lipsmack','Chew')
     grid on; axes = gca; axes.LineWidth = 3; axes.GridLineStyle = ':';
-%     exportgraphics(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
-%     savefig(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.fig']);
-
-% %     
-%     f2 = figure; set(f2, 'Position',[476 92 1022 774]);%axes(haPlot(2)); 
-% 
-%     plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVCh(:,3),'Color',[0.3010 0.7450 0.9330]); hold on;
-%     plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVLS(:,3),'Color',[0.4660 0.6740 0.1880])
-%     plot(taxis2take,allDataOut.(regions{rr}.label).distanceLSVCh(:,3),'Color',[0.6350 0.0780 0.1840]	)
-%     plot(taxis2take, allDataOut.(regions{rr}.label).distanceAverage(:,3),'k','linew',6);
-%     xlabel('Time'), ylabel('Distance, au')
-%     title(['Region: ' regions{rr}.label ', Distance between Trajs in 3D'])
+    exportgraphics(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
+    savefig(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.fig']);
     
-    %% euclidean distance 
+    f2 = figure; set(f2, 'Position',[476 92 1022 774]);%axes(haPlot(2)); 
+
+    plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVCh(:,3),'Color',[0.3010 0.7450 0.9330]); hold on;
+    plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVLS(:,3),'Color',[0.4660 0.6740 0.1880])
+    plot(taxis2take,allDataOut.(regions{rr}.label).distanceLSVCh(:,3),'Color',[0.6350 0.0780 0.1840]	)
+    plot(taxis2take, allDataOut.(regions{rr}.label).distanceAverage(:,3),'k','linew',6);
+    xlabel('Time'), ylabel('Distance, au')
+    title(['Region: ' regions{rr}.label ', Distance between Trajs in 3D'])
+   
     f3 = figure; set(f3, 'Position',[476 92 1022 774]);%axes(haPlot(2)); 
     plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVCh(:,maxDim),'Color',[0.3010 0.7450 0.9330]); hold on;
     plot(taxis2take,allDataOut.(regions{rr}.label).distanceThrVLS(:,maxDim),'Color',[0.4660 0.6740 0.1880])
@@ -422,14 +403,24 @@ for rr = 1:length(regions)
     xlabel('Time'), ylabel('Distance, au')
     title(['Region: ' regions{rr}.label ', Distance between Trajs, maxDim'])
     legend('Thr-Ch','Thr-LS','LS-Ch','Avg')
-    %exportgraphics(gcf, ['~/Desktop/DistanceBtwnNeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
+    exportgraphics(gcf, ['~/Desktop/DistanceBtwnNeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
 
-    %% plotting distance results with stats
-    plot_distance_shuffle_results(shuffleStats, shuffleNull, regions{rr}.label, taxis2take, ...
-        'ShowAverage', true, 'CIPrct', [5 95]);
-    set(findall(gcf,'Type','axes'), 'YLimMode','manual');
-    ylims = [0, max(cellfun(@(p) max(shuffleStats.M1.(p).obs), {'ThrVCh','ThrVLS','LSVCh','Average'})) * 1.1];
-    ax = findall(gcf,'Type','axes'); set(ax, 'YLim', ylims);
+    % visualize each PC, for each bhv
+    %%
+    figure; title(['Region : ' regions{rr}.label])
+    colors = 'rbg';
+    for PC = 1:3
+        start = 1;
+        for i = 1:length(bhvs2plot)
+            stop = length(taxis2take)*i;
+            PrincipleAxis = score(start:stop,PC);
+            subplot(1,3,PC);
+            plot(taxis2take,PrincipleAxis, colors(i), 'LineWidth', 6); xlabel('Time (sec)'); ylabel('a.u.'); title(['PC' num2str(PC)'])
+            hold on
+            start = start + length(taxis2take);
+        end
+    end
+
 
     %% TO make movie of time evolving neural trajectories...
     %
@@ -501,7 +492,17 @@ for rr = 1:length(regions)
     %
 end
 
+%% plotting distance results 
 
+for rr = 1:length(regions)
+
+    plot_distance_shuffle_results(shuffleStats, shuffleNull, regions{rr}, taxis2take, ...
+    'ShowAverage', true, 'CIPrct', [5 95]);
+    set(findall(gcf,'Type','axes'), 'YLimMode','manual');
+    ylims = [0, max(cellfun(@(p) max(shuffleStats.M1.(p).obs), {'ThrVCh','ThrVLS','LSVCh','Average'})) * 1.1];
+    ax = findall(gcf,'Type','axes'); set(ax, 'YLim', ylims);
+
+end
 
 function plot_distance_shuffle_results(shuffleStats, shuffleNull, regionLabel, tAxis, varargin)
 % Plot observed trajectory distances vs. shuffle null with significance shading.

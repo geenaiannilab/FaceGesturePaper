@@ -1,8 +1,5 @@
 
 %% written GI 250831
-close all; clear all ;
-set(0,'defaultAxesFontSize',24)
-set(0,'defaultAxesFontWeight','bold')
 
 % generate summary metrics regarding stability/dynamnicity of codes 
 % DI = Fraction of decoding "mass" on/near the diagonal vs off-diagonal.
@@ -14,6 +11,11 @@ set(0,'defaultAxesFontWeight','bold')
 
 % Generalization half-life (G½)
 % Average over train times the lag delta where accuracy first drops to 50% of its peak:
+
+close all; clear all ;
+set(0,'defaultAxesFontSize',24)
+set(0,'defaultAxesFontWeight','bold')
+
 
 %% intial set-up
 subject = 'combined';
@@ -49,18 +51,18 @@ end
 
 chance = 0.6;                 % set to your tasks chance level
 
-band   = 1;                  % half-width (in bins) of the diagonal strip you count as "on/near the diagonal3 when computing DI;                               % pick band roughly matching your temporal resolution or expected generalization (e.g., 1–2 bins for sharp, dynamic codes
+band   = 10;                  % half-width (in bins) of the diagonal strip you count as "on/near the diagonal3 when computing DI;                               % pick band roughly matching your temporal resolution or expected generalization (e.g., 1–2 bins for sharp, dynamic codes
                               % larger band → more matrix “mass” counted as diagonal ⇒ higher DI; smaller band makes the metric stricter (more “dynamic” if mass is tightly on the diagonal).
  
-%out = summarize_ctd_dynamics(ctdat, arrayList, ...
- %     'chance',chance, 'band',band, 'tAxis',windowsCenter,'Colors',colorArray);
+out = summarize_ctd_dynamics(ctdat, arrayList, ...
+     'chance',chance, 'band',band, 'tAxis',windowsCenter,'Colors',colorArray);
 
 %% DI comparison 
 % Build per-iteration DI vectors (set chance and diagonal band as you use in figures)
 diCell = build_di_vectors(ctdat, arrayList, 'Chance', chance, 'Band', band);
 
 % Run all pairwise, unpaired permutation comparisons
-resDI = compare_DI_unpaired_all(diCell, arrayList, 'NPerm', 20000, 'NBoot', 5000, 'Seed', 123);
+resDI = compare_DI_unpaired_all(diCell, arrayList, 'Seed', 123);
 
 %% TGW comparison
 % Build per-iteration TGW vectors (choose units via tAxis)
@@ -68,7 +70,7 @@ tgwCell = build_tgw_vectors(ctdat, arrayList, 'Chance', chance, 'TAxis', windows
 
 % Run all pairwise comparisons (unpaired permutation)
 resTGW = compare_TGW_unpaired_all(tgwCell, arrayList, ...
-          'NPerm', 20000, 'NBoot', 5000, 'Seed', 123);
+           'Seed', 123);
 
 
 %% Plot pairwise comparisons (positive = A more dynamic)
@@ -82,7 +84,7 @@ outTGW = plot_pairwise_TGW_matrix(resTGW, 'Alpha',0.05, 'Adjust','fdr', ...
 %% Plot all results per region
 % Summary bars with overlaid brackets (FDR across pairs; use two-sided p)
 summarize_ctd_dynamics(ctdat, arrayList, ...
-   'chance', 0.5, 'band', 1, 'tAxis', windowsCenter, 'colors', colorArray, ...
+   'chance', chance, 'band', band, 'tAxis', windowsCenter, 'colors', colorArray, ...
    'resDI', resDI, 'resTGW', resTGW, ...
    'Alpha', 0.05, 'Adjust', 'fdr', 'UsePColumn', 'p_two', ...
    'ShowStars', true);
