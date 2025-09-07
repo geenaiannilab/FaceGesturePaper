@@ -21,15 +21,15 @@ clear all; close all;
 set(0,'defaultAxesFontSize',36); set(0, 'DefaultLineLineWidth', 4);
 set(0,'defaultAxesFontWeight','bold')
 
-date = '210704';
-subject ='Barney';
+date = '171128';
+subject ='Thor';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 
 
 regions = getChannel2CorticalRegionMapping(subject, 1);
 
-chls = 1:240;
-subsessions2plot = [2:5 7:10];
+chls = 1:192;
+subsessions2plot = [1 2 4 5];
 bhvs2plot = [1 2 4];
 
 % DO NOT CHANGE!
@@ -260,7 +260,7 @@ end
 
 
 
-% calculate & plot how far away in neural space starting positions of each trajectory are
+% calculate euclidean neural space starting positions of each trajectory are
 
 for rr = 1:length(regions)
 
@@ -321,9 +321,9 @@ if saveFlag
         'shuffleStats','shuffleNull','cfg');
 end
 
-%%%%%%%%%%
-%%%%%%%% plotting PCA results
-%%
+%% ============================
+%% Plotting PCA results 
+%% ============================
 
 for rr = 1:length(regions)
 
@@ -425,11 +425,12 @@ for rr = 1:length(regions)
     %exportgraphics(gcf, ['~/Desktop/DistanceBtwnNeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
 
     %% plotting distance results with stats
+    f4 = figure; set(f3, 'Position',[476 92 1022 774]);
     plot_distance_shuffle_results(shuffleStats, shuffleNull, regions{rr}.label, taxis2take, ...
         'ShowAverage', true, 'CIPrct', [5 95]);
     set(findall(gcf,'Type','axes'), 'YLimMode','manual');
     ylims = [0, max(cellfun(@(p) max(shuffleStats.M1.(p).obs), {'ThrVCh','ThrVLS','LSVCh','Average'})) * 1.1];
-    ax = findall(gcf,'Type','axes'); set(ax, 'YLim', ylims);
+    %ax = findall(gcf,'Type','axes'); set(ax, 'YLim', ylims);
 
     %% TO make movie of time evolving neural trajectories...
     %
@@ -584,44 +585,7 @@ end
 
 end
 
-% --------- helpers ---------
-
-function fill_between(x, y1, y2, faceColor)
-% Shade the area between y1 and y2 over x
-x = x(:);
-y1 = y1(:);
-y2 = y2(:);
-X = [x; flipud(x)];
-Y = [y1; flipud(y2)];
-patch('XData',X,'YData',Y, 'FaceColor',faceColor, 'EdgeColor','none', 'FaceAlpha',0.6);
-end
-
-function shade_sig_runs(tAxis, sigMask, ylims, baseColor)
-% Shade contiguous significant time runs as a light background patch.
-% sigMask: logical [T x 1]
-if ~any(sigMask), return; end
-
-% lighter version of baseColor
-tint = 0.2 + 0.8*baseColor;  % pull toward white
-tint(tint>1)=1;
-
-% find contiguous runs
-dSig = diff([false; sigMask(:); false]);
-runStarts = find(dSig==1);
-runEnds   = find(dSig==-1) - 1;
-
-for k = 1:numel(runStarts)
-    i0 = runStarts(k); i1 = runEnds(k);
-    x0 = tAxis(i0);    x1 = tAxis(i1);
-    patch('XData',[x0 x1 x1 x0], 'YData',[ylims(1) ylims(1) ylims(2) ylims(2)], ...
-          'FaceColor', tint, 'FaceAlpha', 0.15, 'EdgeColor','none');
-end
-
-uistack(findobj(gca,'Type','patch'),'bottom'); % keep shading behind curves
-end
-
-
-    function [stats, nullStore] = test_distance_shuffle( ...
+function [stats, nullStore] = test_distance_shuffle( ...
     allDataOut_obs, allPSTH, allTrials, ...
     regions, bhvs2plot, spikeLabels2plot, bins2take, taxis2take, cfg)
 % Label-shuffle permutation test for trajectory distances over time.
@@ -844,6 +808,44 @@ for rr = 1:numel(regions)
         allDataOut.(rlab).distanceAverage(:,dd) = mean([d1 d2 d3], 2);
     end
 end
+end
+
+
+% --------- helpers ---------
+
+
+function fill_between(x, y1, y2, faceColor)
+% Shade the area between y1 and y2 over x
+x = x(:);
+y1 = y1(:);
+y2 = y2(:);
+X = [x; flipud(x)];
+Y = [y1; flipud(y2)];
+patch('XData',X,'YData',Y, 'FaceColor',faceColor, 'EdgeColor','none', 'FaceAlpha',0.6);
+end
+
+function shade_sig_runs(tAxis, sigMask, ylims, baseColor)
+% Shade contiguous significant time runs as a light background patch.
+% sigMask: logical [T x 1]
+if ~any(sigMask), return; end
+
+% lighter version of baseColor
+tint = 0.2 + 0.8*baseColor;  % pull toward white
+tint(tint>1)=1;
+
+% find contiguous runs
+dSig = diff([false; sigMask(:); false]);
+runStarts = find(dSig==1);
+runEnds   = find(dSig==-1) - 1;
+
+for k = 1:numel(runStarts)
+    i0 = runStarts(k); i1 = runEnds(k);
+    x0 = tAxis(i0);    x1 = tAxis(i1);
+    patch('XData',[x0 x1 x1 x0], 'YData',[ylims(1) ylims(1) ylims(2) ylims(2)], ...
+          'FaceColor', tint, 'FaceAlpha', 0.15, 'EdgeColor','none');
+end
+
+uistack(findobj(gca,'Type','patch'),'bottom'); % keep shading behind curves
 end
 
 function p_fdr = bh_fdr(p, alpha)
