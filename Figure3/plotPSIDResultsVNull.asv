@@ -103,6 +103,7 @@ allShuffledErr = squeeze(mean(allShuffledStd,2));
 % and per-iteration null (nBhvs x nIter x nRegions).
 
 % 1) Recompute/retain per-iteration observed accuracies to use in tests
+%    (Your loop had "decodingAcc" inside it; gather it across regions now.)
 nRegions   = numel(regionList);
 nBhvs      = size(allShuffled, 1);           % from your null array
 nIterations= size(allShuffled, 2);
@@ -152,7 +153,7 @@ for rr = 1:nRegions
         else
             try
                 [p,~,stats] = signrank(xo, xn, 'tail','right');
-                z = getfield(stats,'zval'); %
+                z = getfield(stats,'zval'); %#ok<GFLD>
             catch
                 % fallback if signrank fails (e.g., too many ties): use sign test
                 sPos = sum(d>0); N = sum(d~=0);
@@ -175,7 +176,7 @@ alpha = 0.05;
 p_within_fdr = reshape(bh_fdr_vec(p_within(:), alpha), size(p_within));
 sig_within   = p_within_fdr < alpha;
 
-%% ------------- (B) Between regions: do accuracies differ? -------------
+% ------------- (B) Between regions: do accuracies differ? -------------
 pairs = nchoosek(1:nRegions, 2);
 nPairs = size(pairs,1);
 
@@ -215,11 +216,11 @@ for pi = 1:nPairs
     end
 end
 
-%% FDR across ALL between-region tests (bhv x all region-pairs)
+% FDR across ALL between-region tests (bhv x all region-pairs)
 p_between_fdr = reshape(bh_fdr_vec(p_between(:), alpha), size(p_between));
 sig_between   = p_between_fdr < alpha;
 
-%% -------- Package results for downstream use/plotting --------
+% -------- Package results for downstream use/plotting --------
 decodingStats = struct();
 decodingStats.within.regionList   = regionList(:);
 decodingStats.within.p            = p_within;
@@ -241,7 +242,7 @@ decodingStats.between.z           = z_between;
 decodingStats.between.r           = r_between;
 decodingStats.between.diffMean    = diffMean;
 
-%% (Optional) quick textual summary
+% (Optional) quick textual summary
 fprintf('\nWithin-region (observed > null), FDR α=%.2f:\n', alpha);
 for rr = 1:nRegions
     for bb = 1:nBhvs
@@ -262,11 +263,7 @@ for pi = 1:nPairs
 end
 
 
-%% plot it all 
-plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
-    allShuffledMean, allShuffledErr, ...
-    regionList, regionCmap, outcomeMetric, pseudoPop, decodingStats, ...
-    'Alpha', 0.05, 'MaxPairsPerGroup', 3, 'YLim', [0 0.8]);
+%%
 
 %% plot all decoding Mean 
 figure;
@@ -309,176 +306,8 @@ title(['Mean ' outcomeMetric ' : Decoding ' extractBefore(pseudoPop,'/') ])
 %
 ylim([0 0.8])
 
-
-
-function plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
-    allShuffledMean, allShuffledErr, regionList, regionCmap, ...
-    outcomeMetric, pseudoPop, decodingStats, varargin)
-% Plot decoding (colored bars) vs. shuffle null (grey/black bars) with significance.
-%
-% Inputs match your arrays:
-%   allDecodingMean : [nBhvs x nRegions]
-%   allDecodingErr  : [nBhvs x nRegions]  (SEM across iterations)
-%   allShuffledMean : [nBhvs x nRegions]
-%   allShuffledErr  : [nBhvs x nRegions]  (SEM across iterations; you used 2*SEM in plot)
-%   regionList      : 1 x nRegions cellstr
-%   regionCmap      : nRegions x 3 RGB in 0–1
-%   outcomeMetric   : e.g., 'CC'
-%   pseudoPop       : string used in title
-%   decodingStats   : struct from the earlier stats block
-%
-% Name-Value (optional):
-%   'Alpha'              : 0.05 (for labeling only)
-%   'MaxPairsPerGroup'   : 3    (limit # of between-region connectors per behavior)
-%   'YLim'               : []   (set y-limits; auto if empty)
-
-ip = inputParser; ip.FunctionName = mfilename;
-addParameter(ip,'Alpha',0.05,@(x) isscalar(x) && x>0 && x<=1);
-addParameter(ip,'MaxPairsPerGroup',3,@(x) isscalar(x) && x>=0);
-addParameter(ip,'YLim',[],@(x) isempty(x) || (isnumeric(x) && numel(x)==2));
-parse(ip,varargin{:});
-alpha = ip.Results.Alpha;
-maxPairs = ip.Results.MaxPairsPerGroup;
-yL = ip.Results.YLim;
-
-[nBhvs, nRegions] = size(allDecodingMean);
-
-%% --- 1) Observed bars (your template) ---
-figure; 
-b = bar(allDecodingMean); hold on;
-for rr = 1:nRegions
-    b(rr).FaceColor = regionCmap(rr,:);
-    b(rr).FaceAlpha = 0.5;
-end
-
-% error bars on observed means
-ngroups = size(allDecodingMean, 1);
-nbars   = size(allDecodingMean, 2);
-groupwidth = min(0.8, nbars/(nbars + 1.5));
-xObs = nan(nBhvs, nRegions);  % store x positions of each colored bar
-
-for i = 1:nbars
-    x = (1:ngroups) - groupwidth/2 + (2*i-1) * groupwidth / (2*nbars);
-    xObs(:,i) = x(:);
-    er = errorbar(x, allDecodingMean(:,i), allDecodingErr(:,i), 'HandleVisibility','off');
-    er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 1.5;
-end
-
-%% --- 2) Null bars (your template) ---
-b2 = bar(squeeze(allShuffledMean)); 
-for rr = 1:nRegions
-    b2(rr).FaceColor = [0 0 0];
-    b2(rr).BarWidth = 0.4;
-    b2(rr).FaceAlpha = 0.25; % slightly lighter so colored bars pop
-    b2(rr).HandleVisibility = 'off'; % keep legend clean
-end
-
-% error bars on null means (you used 2*SEM here)
-ngroupsN = size(allShuffledMean, 1); nbarsN = size(allShuffledMean, 2);
-groupwidthN = min(0.8, nbarsN/(nbarsN + 1.5));
-for i = 1:nbarsN
-    x = (1:ngroupsN) - groupwidthN/2 + (2*i-1) * groupwidthN / (2*nbarsN);
-    er = errorbar(x, allShuffledMean(:,i), 2*allShuffledErr(:,i),'HandleVisibility','off');
-    er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 1.5;
-end
-
-legend(regionList, 'Location','best'); 
-xlabel('Face Motion PC'); ylabel(outcomeMetric);
-title(sprintf('Mean %s : Decoding %s', outcomeMetric, extractBefore(pseudoPop,'/')));
-grid on;
-
-% baseline y-limits
-yMaxBars = max([allDecodingMean(:)+allDecodingErr(:); allShuffledMean(:)+2*allShuffledErr(:)], [], 'omitnan');
-yl = [0, max(0.8, yMaxBars*1.15)]; % default padding
-if ~isempty(yL), yl = yL; end
-ylim(yl);
-
-%% --- 3) Significance overlays from decodingStats ---
-% A) within-region (obs > null): stars above colored bars
-if isfield(decodingStats,'within') && isfield(decodingStats.within,'p_fdr')
-    pW = decodingStats.within.p_fdr;  % [nBhvs x nRegions]
-    for rr = 1:nRegions
-        for bb = 1:nBhvs
-            p = pW(bb, rr);
-            if ~isfinite(p), continue; end
-            stars = p2stars(p);
-            if isempty(stars), continue; end
-
-            x = xObs(bb, rr);
-            y = allDecodingMean(bb, rr) + allDecodingErr(bb, rr) + 0.02*range(yl);
-            text(x, y, stars, 'HorizontalAlignment','center', 'VerticalAlignment','bottom', ...
-                'FontWeight','bold', 'Color', regionCmap(rr,:), 'Clipping','off');
-        end
-    end
-end
-
-% B) between-region: pairwise connectors per behavior (limit maxPairs per group)
-if isfield(decodingStats,'between') && isfield(decodingStats.between,'p_fdr')
-    pB = decodingStats.between.p_fdr;     % [nBhvs x nPairs]
-    pairNames = decodingStats.between.pairs(:);
-    % Reconstruct index pairs (assumes same ordering used to build stats)
-    pairs = nchoosek(1:nRegions, 2);      % size = nPairs x 2
-
-    yPad = 0.03*range(yl);
-    for bb = 1:nBhvs
-        % pick significant pairs for this behavior
-        sigIdx = find(isfinite(pB(bb,:)) & pB(bb,:) < alpha);
-        % order by p-value (smallest first) and cap
-        [~, ord] = sort(pB(bb, sigIdx), 'ascend');
-        sigIdx = sigIdx(ord);
-        if ~isempty(maxPairs), sigIdx = sigIdx(1:min(maxPairs, numel(sigIdx))); end
-
-        % base y at top of the tallest observed bar in this behavior group
-        yBase = max(allDecodingMean(bb,:)+allDecodingErr(bb,:), [], 'omitnan');
-        yH = yBase + 0.05*range(yl);
-
-        for kk = 1:numel(sigIdx)
-            pi = sigIdx(kk);
-            r1 = pairs(pi,1); r2 = pairs(pi,2);
-            x1 = xObs(bb, r1); x2 = xObs(bb, r2);
-            if x1 == 0 || x2 == 0, continue; end
-
-            y = yH + (kk-1)*yPad;        % stack connectors to avoid overlap
-            % draw connector
-            plot([x1 x1 x2 x2], [y-0.004 y y y-0.004], 'k-', 'LineWidth', 1.0, 'HandleVisibility','off');
-            % star(s) above midpoint
-            pm = pB(bb, pi);
-            stars = p2stars(pm);
-            text(mean([x1 x2]), y + 0.004, stars, 'HorizontalAlignment','center', ...
-                 'VerticalAlignment','bottom', 'FontWeight','bold', 'Color', [0 0 0], 'Clipping','off');
-        end
-    end
-end
-
-% expand ylim if annotations exceed current top
-ax = gca;
-drawnow;
-ylNow = ylim(ax);
-allText = findall(ax, 'Type','text');
-if ~isempty(allText)
-    yText = arrayfun(@(h) h.Position(2), allText);
-    yTop = max([ylNow(2); yText(:)]);
-    if yTop > ylNow(2)
-        ylim([ylNow(1) yTop + 0.02*range(ylNow)]);
-    end
-end
-
-end
-
-% --------- helpers ----------
-function s = p2stars(p)
-% Convert p-value to asterisks (FDR-corrected p recommended)
-if ~isfinite(p) || p>=0.05
-    s = '';
-elseif p<0.001
-    s = '***';
-elseif p<0.01
-    s = '**';
-else
-    s = '*';
-end
-end
-
+% ------------ helpers: 
+% Benjamini–Hochberg FDR -------------
 function p_fdr = bh_fdr_vec(p, alpha)
     if nargin < 2, alpha = 0.05; end
     p = p(:);
