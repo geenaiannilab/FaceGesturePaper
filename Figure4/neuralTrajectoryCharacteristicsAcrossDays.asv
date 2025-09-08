@@ -205,7 +205,41 @@ end
 
 %%%%%%%%%%%%%%%
 %% now lets look at the individual days, NOT the pseudopopulations 
+%%
+clear all; 
+dates2analyze = {'Thor_171010','Thor_171005','Thor_171027','Thor_171128',...
+    'Barney_210704','Barney_210706','Barney_210805'};
+regions = {'S1','M1','PMv','M3','All'};
 
+allDataOut_days = []; 
+shuffleStats_days = [];
+shuffleNull_days = [];
+
+for dd = 1:length(dates2analyze)
+    workdir = ['~/Dropbox/PhD/SUAinfo/' dates2analyze{dd} '/Data4Analysis/'];
+    data(dd) = load([workdir '/neuralTraj_All.mat']);
+    allDataOut_days{dd} = data(dd).allDataOut;
+    shuffleStats_days{dd} = data(dd).shuffleStats;
+    shuffleNull_days{dd} = data(dd).shuffleNull;
+end
+
+% Assume you have:
+%   allDataOut_days{1..7}, shuffleStats_days{1..7}, shuffleNull_days{1..7}
+cfg = struct('useMaxDim', true, 'alphaFDR', 0.05, ...
+             'pairs', {'ThrVCh','ThrVLS','LSVCh','Average'});
+
+summary = summarize_distance_across_days(allDataOut_days, shuffleStats_days, shuffleNull_days, regions, cfg);
+
+% Plot for one region (e.g., 'M1') using Fisher-combined significance
+plot_distance_summary_across_days(summary, 'M1', taxis2take, 'Use','fisher', 'ShowNullBand', true);
+
+% To iterate across all 5 regions:
+for rr = 1:numel(regions)
+    figure;
+    plot_distance_summary_across_days(summary, regions{rr}.label, taxis2take, 'Use','stouffer');
+end
+
+%% OLD 
 clear all; 
 dates2analyze = {'Thor_171010','Thor_171005','Thor_171027','Thor_171128',...
     'Barney_210704','Barney_210706','Barney_210805'};
@@ -269,8 +303,284 @@ xlabel('Time'), ylabel('Distance, au')
 sgtitle(['Euclidean Distances Between Neural Trajectories (Single Recordings)'],'FontSize',28)
 legend('Thr-LS','Thr-Ch','LS-Ch','Avg')
 
+% Assume you have:
+%   allDataOut_days{1..7}, shuffleStats_days{1..7}, shuffleNull_days{1..7}
+% cfg = struct('useMaxDim', true, 'alphaFDR', 0.05, ...
+%              'pairs', {'ThrVCh','ThrVLS','LSVCh','Average'});
+% 
+% summary = summarize_distance_across_days(allDataOut_days, shuffleStats_days, shuffleNull_days, regions, cfg);
+% 
+% % Plot for one region (e.g., 'M1') using Fisher-combined significance
+% plot_distance_summary_across_days(summary, 'M1', taxis2take, 'Use','fisher', 'ShowNullBand', true);
+% 
+% % To iterate across all 5 regions:
+% for rr = 1:numel(regions)
+%     figure;
+%     plot_distance_summary_across_days(summary, regions{rr}.label, taxis2take, 'Use','stouffer');
+% end
 
 
+function summary = summarize_distance_across_days(allDataOut_days, shuffleStats_days, shuffleNull_days, regions, cfg)
+% Aggregate 7 day-wise distance and significance results per region/pair.
+%
+% Inputs:
+%   allDataOut_days   : 1xD cell, each is day d's allDataOut struct
+%   shuffleStats_days : 1xD cell, each is day d's shuffleStats struct
+%   shuffleNull_days  : 1xD cell, each is day d's shuffleNull struct
+%   regions           : cell array with .label and .channels used earlier
+%   cfg               : struct with fields:
+%       .useMaxDim (default true)  -> use nDimGreater90 per region; align across days via min()
+%       .dimIdx    (default [])    -> fixed PCA dimension if useMaxDim==false
+%       .alphaFDR  (default 0.05)  -> FDR for combined p across time
+%       .pairs     (default {'ThrVCh','ThrVLS','LSVCh','Average'})
+%
+% Output: summary.(region).(pair) with fields:
+%   .curvesPerDay   [T x D] observed distance curves (aligned dim)
+%   .meanCurve      [T x 1] across-day mean
+%   .semCurve       [T x 1] across-day SEM
+%   .sdCurve        [T x 1] across-day SD
+%   .ci95           [T x 2] 2.5 and 97.5 percentiles across days
+%   .p_fisher       [T x 1] Fisher-combined p across days
+%   .p_fisher_fdr   [T x 1] BH-FDR adjusted p across time
+%   .sig_fisher     [T x 1] logical mask (p_fisher_fdr < alphaFDR)
+%   .z_stouffer     [T x 1] Stouffer-combined Z across days
+%   .p_stouffer     [T x 1] one-sided p from Stouffer Z
+%   .p_stouffer_fdr [T x 1] BH-FDR adjusted
+%   .sig_stouffer   [T x 1] logical mask (p_stouffer_fdr < alphaFDR)
+%   .prop_sig_day   [T x 1] fraction of days with per-day FDR sig
+%   .any_sig_day    [T x 1] any day significant (per-day FDR)
+%   .dd_used        scalar  PCA dim used across days for this region
+%   .null_prctiles  [T x 2] 2.5/97.5% from concatenated day nulls (plot aid)
+%
+% Assumes consistent time axis across days.
+
+if ~isfield(cfg,'useMaxDim'), cfg.useMaxDim = true; end
+if ~isfield(cfg,'dimIdx'),    cfg.dimIdx    = [];   end
+if ~isfield(cfg,'alphaFDR'),  cfg.alphaFDR  = 0.05; end
+if ~isfield(cfg,'pairs'),     cfg.pairs     = {'ThrVCh','ThrVLS','LSVCh','Average'}; end
+
+D = numel(allDataOut_days);
+if D==0, error('No day-wise inputs provided.'); end
+
+% Infer T from first available region/pair
+T = [];
+for rr = 1:numel(regions)
+    rlab = regions{rr}.label;
+    A0 = allDataOut_days{1}.(rlab).distanceAverage;
+    if ~isempty(A0), T = size(A0,1); break; end
+end
+if isempty(T), error('Could not infer T from first day.'); end
+
+summary = struct();
+
+for rr = 1:numel(regions)
+    rlab = regions{rr}.label;
+
+    % Decide aligned PCA dimension across days
+    if cfg.useMaxDim
+        dd_days = nan(D,1);
+        for d = 1:D
+            dd_days(d) = allDataOut_days{d}.(rlab).nDimGreater90;
+        end
+        dd_used = min(dd_days);  % align to smallest to ensure availability
+    else
+        if isempty(cfg.dimIdx)
+            error('cfg.dimIdx must be set when cfg.useMaxDim == false.');
+        end
+        dd_used = cfg.dimIdx;
+    end
+
+    for pi = 1:numel(cfg.pairs)
+        pairName = cfg.pairs{pi};
+
+        % Collect observed curves across days at aligned dim
+        curves = nan(T, D);
+        perDay_p = nan(T, D);
+        perDay_sig = false(T, D);
+        % Collect nulls across days (concat columns) just for plotting context
+        allNullCols = [];
+
+        for d = 1:D
+            % Observed curve
+            curves(:,d) = allDataOut_days{d}.(rlab).(['distance' pairName])(:, dd_used);
+
+            % Per-day raw p and per-day FDR sig mask
+            perDay_p(:,d)   = shuffleStats_days{d}.(rlab).(pairName).p;
+            perDay_sig(:,d) = shuffleStats_days{d}.(rlab).(pairName).sig_fdr;
+
+            % Null columns at aligned dim
+            if isfield(shuffleNull_days{d}.(rlab), pairName)
+                nullMat_d = shuffleNull_days{d}.(rlab).(pairName); % [T x nShuf_d]
+                % ensure compatible dims (some days might have fewer dims; protected by dd_used)
+                allNullCols = [allNullCols, nullMat_d]; %#ok<AGROW>
+            end
+        end
+
+        % Variability summaries
+        meanCurve = mean(curves, 2, 'omitnan');
+        sdCurve   = std(curves, 0, 2, 'omitnan');
+        semCurve  = sdCurve / sqrt(D);
+        ci95      = prctile(curves, [2.5 97.5], 2); % across days
+
+        % Combine p across days at each time bin
+        p_fisher = nan(T,1); p_stouffer = nan(T,1); z_stouffer = nan(T,1);
+        for t = 1:T
+            p_vec = perDay_p(t, :);
+            p_vec = p_vec(isfinite(p_vec) & p_vec>0 & p_vec<=1);
+            if isempty(p_vec)
+                p_fisher(t)   = NaN;
+                p_stouffer(t) = NaN;
+                z_stouffer(t) = NaN;
+            else
+                p_fisher(t)   = fisher_combine_p(p_vec);
+                [z_stouffer(t), p_stouffer(t)] = stouffer_combine_p(p_vec);
+            end
+        end
+
+        % FDR across time bins (per region×pair)
+        p_fisher_fdr   = bh_fdr_vec(p_fisher, cfg.alphaFDR);
+        p_stouffer_fdr = bh_fdr_vec(p_stouffer, cfg.alphaFDR);
+
+        sig_fisher   = p_fisher_fdr   < cfg.alphaFDR;
+        sig_stouffer = p_stouffer_fdr < cfg.alphaFDR;
+
+        % Day-level summary masks
+        prop_sig_day = mean(perDay_sig, 2, 'omitnan'); % fraction of days
+        any_sig_day  = any(perDay_sig, 2);
+
+        % Aggregate null percentiles (for visual context)
+        if ~isempty(allNullCols)
+            null_prct = prctile(allNullCols, [2.5 97.5], 2);
+        else
+            null_prct = nan(T,2);
+        end
+
+        % Write out
+        summary.(rlab).(pairName).curvesPerDay   = curves;
+        summary.(rlab).(pairName).meanCurve      = meanCurve;
+        summary.(rlab).(pairName).sdCurve        = sdCurve;
+        summary.(rlab).(pairName).semCurve       = semCurve;
+        summary.(rlab).(pairName).ci95           = ci95;
+        summary.(rlab).(pairName).p_fisher       = p_fisher;
+        summary.(rlab).(pairName).p_fisher_fdr   = p_fisher_fdr;
+        summary.(rlab).(pairName).sig_fisher     = sig_fisher;
+        summary.(rlab).(pairName).z_stouffer     = z_stouffer;
+        summary.(rlab).(pairName).p_stouffer     = p_stouffer;
+        summary.(rlab).(pairName).p_stouffer_fdr = p_stouffer_fdr;
+        summary.(rlab).(pairName).sig_stouffer   = sig_stouffer;
+        summary.(rlab).(pairName).prop_sig_day   = prop_sig_day;
+        summary.(rlab).(pairName).any_sig_day    = any_sig_day;
+        summary.(rlab).(pairName).null_prctiles  = null_prct;
+        summary.(rlab).(pairName).dd_used        = dd_used;
+    end
+end
+end
+
+function plot_distance_summary_across_days(summary, regionLabel, tAxis, varargin)
+% Visualize across-day mean distance vs. null band, with combined significance.
+%
+% summary     : output of summarize_distance_across_days
+% regionLabel : e.g., 'M1'
+% tAxis       : [T x 1] time vector
+%
+% Optional name/value:
+%   'Pairs'         : which pairs to show (default {'ThrVCh','ThrVLS','LSVCh'})
+%   'Use'           : 'fisher' or 'stouffer' for significance shading (default 'fisher')
+%   'ShowNullBand'  : true/false to show aggregated null 95% band (default true)
+%   'ShowSEM'       : true/false to show mean ± SEM (default true)
+
+p = inputParser;
+addParameter(p,'Pairs', {'ThrVCh','ThrVLS','LSVCh'});
+addParameter(p,'Use', 'fisher');
+addParameter(p,'ShowNullBand', true);
+addParameter(p,'ShowSEM', true);
+parse(p, varargin{:});
+Pairs        = p.Results.Pairs;
+Use          = lower(p.Results.Use);
+ShowNullBand = p.Results.ShowNullBand;
+ShowSEM      = p.Results.ShowSEM;
+
+nP = numel(Pairs);
+tiledlayout(1, nP, 'Padding','compact','TileSpacing','compact');
+
+for i = 1:nP
+    pairName = Pairs{i};
+    S = summary.(regionLabel).(pairName);
+
+    meanCurve = S.meanCurve;
+    semCurve  = S.semCurve;
+    sigMask   = S.sig_fisher;  % default
+    switch Use
+        case 'stouffer'
+            sigMask = S.sig_stouffer;
+    end
+
+    nexttile; hold on;
+
+    % (optional) aggregated null band for context
+    if ShowNullBand && isfield(S,'null_prctiles') && all(size(S.null_prctiles)==[numel(tAxis) 2])
+        ciNull = S.null_prctiles;
+        fill_between(tAxis, ciNull(:,1), ciNull(:,2), [0.9 0.9 0.9], 0.6);
+    end
+
+    % mean ± SEM
+    if ShowSEM
+        fill_between(tAxis, meanCurve - semCurve, meanCurve + semCurve, [0.7 0.8 1.0], 0.35);
+    end
+    hMean = plot(tAxis, meanCurve, 'LineWidth', 2);
+
+    % significance shading (combined across days)
+    yl = get(gca,'YLim');
+    shade_sig_runs(tAxis, sigMask, yl, hMean.Color);
+
+    grid on;
+    xlabel('Time'); ylabel('Distance');
+    title(sprintf('%s  %s', regionLabel, pairName), 'Interpreter','none');
+    legend(hMean, {'Across-day mean'}, 'Location','best');
+    uistack(hMean,'top');
+end
+end
+
+% ------- helpers -------
+function fill_between(x, y1, y2, faceColor, alpha)
+x = x(:); y1 = y1(:); y2 = y2(:);
+X = [x; flipud(x)];
+Y = [y1; flipud(y2)];
+patch('XData',X,'YData',Y, 'FaceColor',faceColor, ...
+      'EdgeColor','none', 'FaceAlpha',alpha);
+end
+
+function shade_sig_runs(tAxis, sigMask, ylims, baseColor)
+if ~any(sigMask), return; end
+tint = 0.2 + 0.8*baseColor; tint(tint>1)=1;
+dSig = diff([false; sigMask(:); false]);
+runStarts = find(dSig==1); runEnds = find(dSig==-1)-1;
+for k = 1:numel(runStarts)
+    i0 = runStarts(k); i1 = runEnds(k);
+    patch('XData',[tAxis(i0) tAxis(i1) tAxis(i1) tAxis(i0)], ...
+          'YData',[ylims(1) ylims(1) ylims(2) ylims(2)], ...
+          'FaceColor',tint, 'FaceAlpha',0.15, 'EdgeColor','none');
+end
+uistack(findobj(gca,'Type','patch'),'bottom');
+end
+
+% ---------- helpers ----------
+function p = fisher_combine_p(pvals)
+% Fisher's method; one-sided p (right tail of chi2 with 2k df)
+k  = numel(pvals);
+X2 = -2 * sum(log(pvals));
+p  = 1 - chi2cdf(X2, 2*k);
+end
+
+function [z, p] = stouffer_combine_p(pvals, w)
+% Stouffer's Z with optional weights; convert one-sided p to Z, combine
+if nargin < 2 || isempty(w), w = ones(size(pvals)); end
+z_i = norminv(1 - pvals);        % one-sided: larger distance => smaller p
+z   = sum(w .* z_i) / sqrt(sum(w.^2));
+p   = 1 - normcdf(z);            % one-sided
+end
+
+function p_fdr = bh_fdr_vec(p, alpha)
 % Benjamini-Hochberg adjusted p-values (vector). Threshold with < alpha.
 if nargin < 2, alpha = 0.05; end
 m = numel(p);

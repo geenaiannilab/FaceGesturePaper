@@ -20,13 +20,6 @@ nShuffles = 10000;
 alpha     = 0.05;
 time2keep = [-1 1];
 
-% for plotting
-colorMap = [         
-    0.4940 0.1840 0.5560
-    0.6350 0.0780 0.1840
-    0.8500 0.3250 0.0980
-    0.9290 0.6940 0.1250 ];
-
 % Pooled results across days
 MI_corr_all = [];
 MI_raw_all  = [];
