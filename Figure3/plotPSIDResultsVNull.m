@@ -1,10 +1,11 @@
-%%%% written 250201 
+%%%% written 250907
 %%%% plots the output of PSID decoding (all regions; Figure 3A from
 %%%% manuscript) 
 %%%% Versus decoding performance of a shuffled, null dataset 
+%%%% and runs stats 
 
 clear all; %close all; 
-set(0,'defaultAxesFontSize', 16); % bc im blind 
+set(0,'defaultAxesFontSize', 18); % bc im blind 
 
 
 % define the dataset you are running
@@ -64,12 +65,12 @@ for rr = 1:length(regionList)
     outcomeMetric = theseResults.outcomeMetric;
 
     %%%  kinematic decoding is nFolds x nBhvsPred x nIter
-    decodingAcc = round(squeeze(mean(theseResults.kinematicDecoding,1,'omitnan')),2); % averaged over nOuterFolds
-    [decodingErr, decodingMean] = std(decodingAcc,[],2);
+    decodingAcc = squeeze(mean(theseResults.kinematicDecoding,1,'omitnan')); % averaged over nOuterFolds
+    [tmp, decodingMean] = std(decodingAcc,[],2);
     
     % nBhvPreds x nRegions
-    allDecodingMean(:,rr) = round(decodingMean,2);
-    allDecodingErr(:,rr) = round(decodingErr,2) ./ sqrt(nIterations);
+    allDecodingMean(:,rr) = decodingMean;
+    allDecodingErr(:,rr) = tmp ./ sqrt(nIterations);
 
     %%% optimal state #s
     alldistN1 = [alldistN1 theseResults.N1];
@@ -88,8 +89,8 @@ for rr = 1:length(regionList)
 
     % shuffled kinematic decoding is nBhvsPred x nIter
     % allShuffledMean is nBhvsPred x nIter x nRegions
-    allShuffled(:,:,rr) = round(shuffledResults.kinematicDecoding,2);
-    allShuffledStd(:,:,rr) = round(shuffledResults.kinematicDecodingStd,2);
+    allShuffled(:,:,rr) = shuffledResults.kinematicDecoding;
+    allShuffledStd(:,:,rr) = shuffledResults.kinematicDecodingStd;
 
 end
 
@@ -245,12 +246,13 @@ decodingStats.between.diffMean    = diffMean;
 fprintf('\nWithin-region (observed > null), FDR α=%.2f:\n', alpha);
 for rr = 1:nRegions
     for bb = 1:nBhvs
-        if sig_within(bb,rr)
-            fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), r=%.2f\n', ...
-                regionList{rr}, bb, p_within(bb,rr), p_within_fdr(bb,rr), r_within(bb,rr));
-        end
+        fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), r=%.2f, p_permMean=%.3g\n', ...
+            regionList{rr}, bb, ...
+            p_within(bb,rr), p_within_fdr(bb,rr), r_within(bb,rr), ...
+            p_permMean(bb,rr));
     end
 end
+
 fprintf('\nBetween-region differences (two-sided), FDR α=%.2f:\n', alpha);
 for pi = 1:nPairs
     for bb = 1:nBhvs
@@ -407,7 +409,7 @@ if isfield(decodingStats,'within') && isfield(decodingStats.within,'p_fdr')
             x = xObs(bb, rr);
             y = allDecodingMean(bb, rr) + allDecodingErr(bb, rr) + 0.02*range(yl);
             text(x, y, stars, 'HorizontalAlignment','center', 'VerticalAlignment','bottom', ...
-                'FontWeight','bold', 'Color', regionCmap(rr,:), 'Clipping','off');
+                'FontWeight','bold', 'FontSize',18, 'Color', regionCmap(rr,:), 'Clipping','off');
         end
     end
 end
@@ -445,7 +447,7 @@ if isfield(decodingStats,'between') && isfield(decodingStats.between,'p_fdr')
             pm = pB(bb, pi);
             stars = p2stars(pm);
             text(mean([x1 x2]), y + 0.004, stars, 'HorizontalAlignment','center', ...
-                 'VerticalAlignment','bottom', 'FontWeight','bold', 'Color', [0 0 0], 'Clipping','off');
+                 'VerticalAlignment','bottom', 'FontSize',14, 'FontWeight','bold', 'Color', [0 0 0], 'Clipping','off');
         end
     end
 end

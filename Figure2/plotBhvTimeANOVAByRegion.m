@@ -28,7 +28,6 @@ barneyRawData.spikeLabels2plot = [barneyRawData1.spikeLabels2plot; barneyRawData
 %% Set up basic variables
 pValueThreshold = 0.05;
 
-
 %% Get Barney's data
 
 % Remove NaNs
@@ -45,15 +44,7 @@ regions{1}.label = 'S1';
 regions{1}.channels = 1:32;
 regions{2}.label = 'M1';
 regions{2}.channels = 33:128;
-% regions{2}.label = 'M1m';
-% regions{2}.channels = 33:64;
-% if includeF4
-%     regions{3}.label = 'M1lat';
-%     regions{3}.channels = 65:128;
-% else
-%     regions{3}.label = 'M1lat';
-%     regions{3}.channels = 65:96;
-% end
+
 regions{3}.label = 'PMv';
 regions{3}.channels = 129:192;
 regions{4}.label = 'M3';
@@ -75,16 +66,7 @@ for ff = 1:length(factors)
         barneyResults.(factors{ff}).(regions{rr}.label).totalNumberOfCells = totalNumberOfCells;
         
     end
-    
-    %barneyResults.(factors{ff}).lateralRegions.percentSignificant = (barneyResults.(factors{ff}).M1.percentSignificant * barneyResults.(factors{ff}).M1.totalNumberOfCells +  barneyResults.(factors{ff}).PMv.percentSignificant * barneyResults.(factors{ff}).PMv.totalNumberOfCells)/...
-   %     (barneyResults.(factors{ff}).M1.totalNumberOfCells + barneyResults.(factors{ff}).PMv.totalNumberOfCells);
-    
-%     barneyResults.(factors{ff}).combinedM1.percentSignificant = (barneyResults.(factors{ff}).M1.percentSignificant * barneyResults.(factors{ff}).M1.totalNumberOfCells + barneyResults.(factors{ff}).M1lat.percentSignificant * barneyResults.(factors{ff}).M1lat.totalNumberOfCells)/...
-%         (barneyResults.(factors{ff}).M1m.totalNumberOfCells + barneyResults.(factors{ff}).M1lat.totalNumberOfCells);
-%     
- %   barneyResults.(factors{ff}).nonM1.percentSignificant = (barneyResults.(factors{ff}).M3.percentSignificant * barneyResults.(factors{ff}).M3.totalNumberOfCells + barneyResults.(factors{ff}).PMv.percentSignificant * barneyResults.(factors{ff}).PMv.totalNumberOfCells)/...
-%        (barneyResults.(factors{ff}).M3.totalNumberOfCells + barneyResults.(factors{ff}).PMv.totalNumberOfCells);
-
+   
     
 end
 
@@ -105,10 +87,7 @@ regions{1}.label = 'S1';
 regions{1}.channels = 1:32;
 regions{2}.label = 'M1';
 regions{2}.channels = 33:96;
-%regions{2}.label = 'M1m';
-%regions{2}.channels = 33:64;
-%regions{3}.label = 'M1lat';
-%regions{3}.channels = 65:96;
+
 regions{3}.label = 'PMv';
 regions{3}.channels = 97:128;
 regions{4}.label = 'M3';
@@ -130,12 +109,6 @@ for ff = 1:length(factors)
         thorResults.(factors{ff}).(regions{rr}.label).totalNumberOfCells = totalNumberOfCells;
         
     end
-    %thorResults.(factors{ff}).lateralRegions.percentSignificant = (thorResults.(factors{ff}).M1m.percentSignificant * thorResults.(factors{ff}).M1m.totalNumberOfCells + thorResults.(factors{ff}).M1lat.percentSignificant * thorResults.(factors{ff}).M1lat.totalNumberOfCells)/...
-     %   (thorResults.(factors{ff}).M1m.totalNumberOfCells + thorResults.(factors{ff}).M1lat.totalNumberOfCells);
-    %thorResults.(factors{ff}).combinedM1.percentSignificant = (thorResults.(factors{ff}).M1m.percentSignificant * thorResults.(factors{ff}).M1m.totalNumberOfCells + thorResults.(factors{ff}).M1lat.percentSignificant * thorResults.(factors{ff}).M1lat.totalNumberOfCells)/...
-    %    (thorResults.(factors{ff}).M1m.totalNumberOfCells + thorResults.(factors{ff}).M1lat.totalNumberOfCells);
-    %   thorResults.(factors{ff}).nonM1.percentSignificant = (thorResults.(factors{ff}).M3.percentSignificant * thorResults.(factors{ff}).M3.totalNumberOfCells + thorResults.(factors{ff}).PMv.percentSignificant * thorResults.(factors{ff}).PMv.totalNumberOfCells)/...
-    %    (thorResults.(factors{ff}).M3.totalNumberOfCells + thorResults.(factors{ff}).PMv.totalNumberOfCells);
 
 end
 
@@ -203,32 +176,3 @@ end
 
 
 
-plotFig = figure;
-for ff = 1:length(factors)
-    subplot(1,3,ff)
-    b = bar([barneyResults.(factors{ff}).lateralRegions.percentSignificant, barneyResults.(factors{ff}).M3.percentSignificant; ...
-        thorResults.(factors{ff}).lateralRegions.percentSignificant, thorResults.(factors{ff}).M3.percentSignificant]');
-    title(factors{ff})
-    xticklabels({'Lateral', 'Medial'})
-    xlabel('Region')
-    ylim([0 1]);
-    ylabel('% Significant Cells')
-    if ff == 3
-        legend('Monkey B', 'Monkey T')
-    end
-end
-
-plotFig = figure;
-for ff = 1:length(factors)
-    subplot(1,3,ff)
-    b = bar([barneyResults.(factors{ff}).combinedM1.percentSignificant, barneyResults.(factors{ff}).nonM1.percentSignificant; ...
-        thorResults.(factors{ff}).combinedM1.percentSignificant, thorResults.(factors{ff}).nonM1.percentSignificant]');
-    title(factors{ff})
-    xticklabels({'M1', 'M3+PMv'})
-    xlabel('Region')
-    ylim([0 1]);
-    ylabel('% Significant Cells')
-    if ff == 3
-        legend('Monkey B', 'Monkey T')
-    end
-end
