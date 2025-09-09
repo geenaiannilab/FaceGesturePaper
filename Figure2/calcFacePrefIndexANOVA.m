@@ -1,6 +1,10 @@
 
-%%% reminder to run for files V2 (+/- 1 s for FEPI) vs no V2 (+/- 0.5 s for
-%%% FEPI) -- same results 
+%% run 2 way anova for effect of cortical region, expresison type, on mean
+%% FR & run post-hoc tests
+%% these were non-significant (reported but not plotted) in main text 
+
+%% run 1 way anova for effect of cortical region on FEP 
+%% and run post-hoc tests -- plotted and reported 
 
 clear all; 
 set(0,'defaultAxesFontSize', 16); % bc im blind 
@@ -140,3 +144,138 @@ legend({'Threat','Lipsmack','Chew'});
 title('MeanFR by Region & GestureType')
 ylabel('mean FR');
 
+%% === APA-style reporting for two-way ANOVA + Tukey post-hoc (no local functions) ===
+%% === APA-style reporting for two-way ANOVA + Tukey post-hoc ===
+
+% Identify columns in the ANOVA table
+hdr   = string(TABLE_twoway(1,:));
+colSS = find(contains(hdr, ["Sum","SS"], 'IgnoreCase', true), 1);
+colDF = find(contains(hdr, ["d.f","df"], 'IgnoreCase', true), 1);
+colF  = find(strcmpi(hdr, "F"), 1);
+colP  = find(contains(hdr, ["Prob>F","p"], 'IgnoreCase', true), 1);
+
+% Row indices
+rowNames = string(TABLE_twoway(2:end,1));                   % names without header
+getRow   = @(lab) find(strcmp(rowNames, string(lab)), 1) + 1;  % +1 for header row
+
+% Factor labels (match your anovan varnames)
+facA   = 'inputExp';
+facB   = 'inputCortRegion';
+facInt = [facA '*' facB];
+
+rA   = getRow(facA);
+rB   = getRow(facB);
+rInt = getRow(facInt);
+rErr = find(contains(rowNames, ["Error","Residual"], 'IgnoreCase', true), 1) + 1;
+
+% Friendly print labels
+labelA   = 'Expression';
+labelB   = 'Cortical region';
+labelInt = 'Expression × Cortical region';
+
+disp('Two-way ANOVA (APA-style):');
+
+if ~isempty(rA) && ~isempty(rErr)
+    df1 = TABLE_twoway{rA, colDF}; df2 = TABLE_twoway{rErr, colDF};
+    Fv  = TABLE_twoway{rA, colF};  p   = TABLE_twoway{rA, colP};
+    fprintf('%s: F(%d, %d) = %.2f, %s\n', labelA, df1, df2, Fv, formatP(p));
+end
+
+if ~isempty(rB) && ~isempty(rErr)
+    df1 = TABLE_twoway{rB, colDF}; df2 = TABLE_twoway{rErr, colDF};
+    Fv  = TABLE_twoway{rB, colF};  p   = TABLE_twoway{rB, colP};
+    fprintf('%s: F(%d, %d) = %.2f, %s\n', labelB, df1, df2, Fv, formatP(p));
+end
+
+if ~isempty(rInt) && ~isempty(rErr)
+    df1 = TABLE_twoway{rInt, colDF}; df2 = TABLE_twoway{rErr, colDF};
+    Fv  = TABLE_twoway{rInt, colF};  p   = TABLE_twoway{rInt, colP};
+    fprintf('%s: F(%d, %d) = %.2f, %s\n', labelInt, df1, df2, Fv, formatP(p));
+end
+
+% Optional: partial eta-squared for each effect
+if ~isempty(colSS) && ~isempty(rErr)
+    SSerr = TABLE_twoway{rErr, colSS};
+    if ~isempty(rA)
+        eta = TABLE_twoway{rA,colSS} / (TABLE_twoway{rA,colSS} + SSerr);
+        fprintf('  eta_p^2 (%s) = %.3f\n', labelA, eta);
+    end
+    if ~isempty(rB)
+        eta = TABLE_twoway{rB,colSS} / (TABLE_twoway{rB,colSS} + SSerr);
+        fprintf('  eta_p^2 (%s) = %.3f\n', labelB, eta);
+    end
+    if ~isempty(rInt)
+        eta = TABLE_twoway{rInt,colSS} / (TABLE_twoway{rInt,colSS} + SSerr);
+        fprintf('  eta_p^2 (%s) = %.3f\n', labelInt, eta);
+    end
+end
+
+%% Post-hoc (Tukey–Kramer) comparisons from multcompare
+% c_twoway rows: [i j lower meanDiff upper pAdj]
+% names: cell array of group labels for each (Expression × Region) cell
+disp('Post-hoc (Tukey–Kramer) comparisons:');
+for r = 1:size(c_twoway,1)
+    i  = c_twoway(r,1);
+    j  = c_twoway(r,2);
+    lo = c_twoway(r,3);
+    md = c_twoway(r,4);
+    hi = c_twoway(r,5);
+    p  = c_twoway(r,6);
+
+    % Ensure names{i}/names{j} printable as char
+    ni = char(string(names{i}));
+    nj = char(string(names{j}));
+
+    fprintf('%s vs %s: ΔM = %.3f, 95%% CI [%.3f, %.3f], %s (Tukey–Kramer)\n', ...
+        ni, nj, md, lo, hi, formatP(p));
+end
+
+%% (Optional) Write the same lines to a UTF-8 text file
+fid = fopen('anova_tukey_report.txt','w','n','UTF-8');
+if fid > 0
+    if ~isempty(rA) && ~isempty(rErr)
+        df1 = TABLE_twoway{rA, colDF}; df2 = TABLE_twoway{rErr, colDF};
+        Fv  = TABLE_twoway{rA, colF};  p   = TABLE_twoway{rA, colP};
+        fprintf(fid,'%s: F(%d, %d) = %.2f, %s\n', labelA, df1, df2, Fv, formatP(p));
+    end
+    if ~isempty(rB) && ~isempty(rErr)
+        df1 = TABLE_twoway{rB, colDF}; df2 = TABLE_twoway{rErr, colDF};
+        Fv  = TABLE_twoway{rB, colF};  p   = TABLE_twoway{rB, colP};
+        fprintf(fid,'%s: F(%d, %d) = %.2f, %s\n', labelB, df1, df2, Fv, formatP(p));
+    end
+    if ~isempty(rInt) && ~isempty(rErr)
+        df1 = TABLE_twoway{rInt, colDF}; df2 = TABLE_twoway{rErr, colDF};
+        Fv  = TABLE_twoway{rInt, colF};  p   = TABLE_twoway{rInt, colP};
+        fprintf(fid,'%s: F(%d, %d) = %.2f, %s\n', labelInt, df1, df2, Fv, formatP(p));
+    end
+    fprintf(fid,'Post-hoc (Tukey–Kramer) comparisons:\n');
+    for r = 1:size(c_twoway,1)
+        i  = c_twoway(r,1);
+        j  = c_twoway(r,2);
+        lo = c_twoway(r,3);
+        md = c_twoway(r,4);
+        hi = c_twoway(r,5);
+        p  = c_twoway(r,6);
+        ni = char(string(names{i}));
+        nj = char(string(names{j}));
+        fprintf(fid,'%s vs %s: ΔM = %.3f, 95%%%% CI [%.3f, %.3f], %s (Tukey–Kramer)\n', ...
+            ni, nj, md, lo, hi, formatP(p));
+    end
+    fclose(fid);
+end
+
+%% ===== Helper placed at the end of the script =====
+function pText = formatP(p)
+%FORMATP  APA-style p-value formatting (no leading zero; < .001 if small)
+    if ~isscalar(p) || ~isfinite(p)
+        pText = 'p = NaN';
+        return
+    end
+    if p < 0.001
+        pText = 'p < .001';
+    else
+        pText = sprintf('p = %.3f', p);
+        % remove leading zero
+        pText = regexprep(pText, 'p = 0\.', 'p = .');
+    end
+end
