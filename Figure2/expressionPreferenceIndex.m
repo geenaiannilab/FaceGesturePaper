@@ -19,25 +19,24 @@
 close all;
 clear all;
 
-
 date = '171128'; %
 subject ='Thor'; %
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 chls = 1:192;
-subsessions2plot = [1 2 4 5];%
+subsessions2plot = [ 1 2 4 5];
 bhvs2plot = [1 2 4];
 
 minRestFlag = 1;
-minRest = 1; % in sec; minimal rest prior to move onset (trials to include)
+minRest = 0.5; % in sec; minimal rest prior to move onset (trials to include)
 
 colors = 'rbmgc';
 saveFlag = 1;
 threshlowFRFlag = 1;
-threshlowFR = 3;
+threshlowFR = 0.1;
 
 win = 0.001; % in sec
 tmin = 0.5; 
-tmax = 1; %0.5;
+tmax = 0.5; %0.5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % generate & then downsample gaussKern for convolution w/ spikes binned at "win" resolution
@@ -236,7 +235,7 @@ for unit = 1:length(Ris)
 end
 
 if saveFlag
-   save([workdir '/' date '_' subject '_faceExpPref_V2.mat'], 'Ris','cortRegion','depthPref','faceExpPref','spikeLabels', ...
+   save([workdir '/' date '_' subject '_faceExpPref_V3.mat'], 'Ris','cortRegion','depthPref','faceExpPref','spikeLabels', ...
        'spikeLabels2plot')
 end
 

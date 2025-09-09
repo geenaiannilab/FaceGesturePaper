@@ -7,19 +7,19 @@ includeF4 = true;
 
 %% Load matfiles
 pathToMatFiles = '/Users/geena/Dropbox/PhD/SUAinfo';
-thorRawData1 = load(fullfile(pathToMatFiles, 'Thor_171010/Data4Analysis/171010_Thor_faceExpPref_V2.mat'));
-thorRawData2 = load(fullfile(pathToMatFiles, 'Thor_171027/Data4Analysis/171027_Thor_faceExpPref_V2.mat'));
-thorRawData3 = load(fullfile(pathToMatFiles, 'Thor_171005/Data4Analysis/171005_Thor_faceExpPref_V2.mat'));
-thorRawData4 = load(fullfile(pathToMatFiles, 'Thor_171128/Data4Analysis/171128_Thor_faceExpPref_V2.mat'));
+thorRawData1 = load(fullfile(pathToMatFiles, 'Thor_171010/Data4Analysis/171010_Thor_faceExpPref_V3.mat'));
+thorRawData2 = load(fullfile(pathToMatFiles, 'Thor_171027/Data4Analysis/171027_Thor_faceExpPref_V3.mat'));
+thorRawData3 = load(fullfile(pathToMatFiles, 'Thor_171005/Data4Analysis/171005_Thor_faceExpPref_V3.mat'));
+thorRawData4 = load(fullfile(pathToMatFiles, 'Thor_171128/Data4Analysis/171128_Thor_faceExpPref_V3.mat'));
 
 thorRawData.depthPref = [thorRawData1.depthPref, thorRawData2.depthPref, thorRawData3.depthPref,thorRawData4.depthPref];
 thorRawData.faceExpPref = [thorRawData1.faceExpPref, thorRawData2.faceExpPref, thorRawData3.faceExpPref,thorRawData4.faceExpPref];
 thorRawData.spikeLabels2plot = [thorRawData1.spikeLabels2plot; thorRawData2.spikeLabels2plot; thorRawData3.spikeLabels2plot; thorRawData4.spikeLabels2plot];
 
 
-barneyRawData1 = load(fullfile(pathToMatFiles, 'Barney_210704/Data4Analysis/210704_barney_faceExpPref_V2.mat'));
-barneyRawData2 = load(fullfile(pathToMatFiles, 'Barney_210805/Data4Analysis/210805_barney_faceExpPref_V2.mat'));
-barneyRawData3 = load(fullfile(pathToMatFiles, 'Barney_210706/Data4Analysis/210706_barney_faceExpPref_V2.mat'));
+barneyRawData1 = load(fullfile(pathToMatFiles, 'Barney_210704/Data4Analysis/210704_barney_faceExpPref_V3.mat'));
+barneyRawData2 = load(fullfile(pathToMatFiles, 'Barney_210805/Data4Analysis/210805_barney_faceExpPref_V3.mat'));
+barneyRawData3 = load(fullfile(pathToMatFiles, 'Barney_210706/Data4Analysis/210706_barney_faceExpPref_V3.mat'));
 
 barneyRawData.depthPref = [barneyRawData1.depthPref, barneyRawData2.depthPref, barneyRawData3.depthPref];
 barneyRawData.faceExpPref = [barneyRawData1.faceExpPref, barneyRawData2.faceExpPref, barneyRawData3.faceExpPref];

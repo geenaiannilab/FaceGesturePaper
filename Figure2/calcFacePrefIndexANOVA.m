@@ -1,5 +1,5 @@
 
-%% run 2 way anova for effect of cortical region, expresison type, on mean
+%% run 2 way anova for effect of cortical region, gesture type, on mean
 %% FR & run post-hoc tests
 %% these were non-significant (reported but not plotted) in main text 
 
@@ -13,9 +13,9 @@ subjects = {'barney','thor'};
 pathToMatFiles = '/Users/geena/Dropbox/PhD/SUAinfo/';
 
 %% get barney's data 
-barneyRawData1 = load(fullfile(pathToMatFiles, 'Barney_210704/Data4Analysis/210704_Barney_faceExpPref_V2.mat'));
-barneyRawData2 = load(fullfile(pathToMatFiles, 'Barney_210706/Data4Analysis/210706_Barney_faceExpPref_V2.mat'));
-barneyRawData3 = load(fullfile(pathToMatFiles, 'Barney_210805/Data4Analysis/210805_Barney_faceExpPref_V2.mat'));
+barneyRawData1 = load(fullfile(pathToMatFiles, 'Barney_210704/Data4Analysis/210704_Barney_faceExpPref.mat'));
+barneyRawData2 = load(fullfile(pathToMatFiles, 'Barney_210706/Data4Analysis/210706_Barney_faceExpPref.mat'));
+barneyRawData3 = load(fullfile(pathToMatFiles, 'Barney_210805/Data4Analysis/210805_Barney_faceExpPref.mat'));
 
 barneyRawData.FEP = [barneyRawData1.faceExpPref, barneyRawData2.faceExpPref, barneyRawData3.faceExpPref]';
 barneyRawData.meanFRs = cat(1, barneyRawData1.Ris, barneyRawData2.Ris, barneyRawData3.Ris);
@@ -23,10 +23,10 @@ barneyRawData.spikeLabels2plot = [barneyRawData1.spikeLabels2plot; barneyRawData
 barneyRawData.cortRegion = [barneyRawData1.cortRegion barneyRawData2.cortRegion barneyRawData3.cortRegion]';
 
 %% get thor's data 
-thorRawData1 = load(fullfile(pathToMatFiles, 'Thor_171010/Data4Analysis/171010_Thor_faceExpPref_V2.mat'));
-thorRawData2 = load(fullfile(pathToMatFiles, 'Thor_171027/Data4Analysis/171027_Thor_faceExpPref_V2.mat'));
-thorRawData3 = load(fullfile(pathToMatFiles, 'Thor_171005/Data4Analysis/171005_Thor_faceExpPref_V2.mat'));
-thorRawData4 = load(fullfile(pathToMatFiles, 'Thor_171128/Data4Analysis/171128_Thor_faceExpPref_V2.mat'));
+thorRawData1 = load(fullfile(pathToMatFiles, 'Thor_171010/Data4Analysis/171010_Thor_faceExpPref.mat'));
+thorRawData2 = load(fullfile(pathToMatFiles, 'Thor_171027/Data4Analysis/171027_Thor_faceExpPref.mat'));
+thorRawData3 = load(fullfile(pathToMatFiles, 'Thor_171005/Data4Analysis/171005_Thor_faceExpPref.mat'));
+thorRawData4 = load(fullfile(pathToMatFiles, 'Thor_171128/Data4Analysis/171128_Thor_faceExpPref.mat'));
 
 thorRawData.FEP = [thorRawData1.faceExpPref, thorRawData2.faceExpPref, thorRawData3.faceExpPref, thorRawData4.faceExpPref]';
 thorRawData.meanFRs = cat(1, thorRawData1.Ris, thorRawData2.Ris, thorRawData3.Ris, thorRawData4.Ris);
@@ -59,7 +59,7 @@ end
 
 % run 1 way anova for effect of cortical region on FEP 
 % and run post-hoc tests 
-[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(FEPout, cortRegionOut,'off')
+[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(FEPout, cortRegionOut,'off');
 [c_oneway,m_oneway] = multcompare(STATS_oneway);
 
 % run 2 way anova for effect of cortical region, expresison type, on mean

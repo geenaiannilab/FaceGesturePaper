@@ -1,16 +1,26 @@
+%%
+%% generates 'date_subj_facePrefAnova,.mat' (needs to be run over all days) 
+% this is a two-way ANOVA to look for effect of gesture, time on individual
+% cell's FR 
 
+%% this data then get loaded by chiSquaredGOF.m to be thresholded, and
+% indiviudal Chi-squared tests applied 
+% 
+
+%% these data are then plotted by plotBhvTimeANOVAbyRegion.m 
+% to generate Figure 2E 
 
 close all;
 clear all;
 
-date = '210706';
-subject ='Barney'; 
+date = '171128';
+subject ='Thor'; 
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
-chls = 1:240;
-subsessions2plot = [2 3 4 6 7 8];
+chls = 1:192;
+subsessions2plot = [ 1 2 4 5];
 bhvs2plot = [1 2 4];
 
-minRestFlag = 0;
+minRestFlag = 1;
 minRest = 0.5; % in sec; minimal rest prior to move onset (trials to include)
 
 colors = 'rbmgc';
@@ -161,14 +171,18 @@ spikeLabels2plot =spikeLabels2plot(~isnan(poolPvals(:,1)),:);
 poolPvals = poolPvals(~isnan(poolPvals(:,1)),:);
 %figure; subplot 311; histogram(poolPvals(:,1),histedges); subplot 312; histogram(poolPvals(:,2),histedges); subplot 313; histogram(poolPvals(:,3),histedges);
 
+if saveFlag
+    save([workdir '/' date '_' subject '_facePrefAnova.mat'], 'allPvals', 'allResults','allStats','spikeLabels2plot')
+end
+
+
+
 cmap = colorBeeSwarm(spikeLabels2plot);
 figure; beeswarm(cmap', poolPvals'); %ylim([-0.1 0.5])
 title([subject '-' date ' subs = ' num2str(subsessions2plot)]);
 subtitle(['bhvs= ' num2str(bhvs2plot)]);
 
-if saveFlag
-    save([workdir '/' date '_' subject '_facePrefAnova.mat'], 'allPvals', 'allResults','allStats','spikeLabels2plot')
-end
+
 function cmap = colorBeeSwarm(spikeLabels2plot)
 
 for k = 1:size(spikeLabels2plot,1)

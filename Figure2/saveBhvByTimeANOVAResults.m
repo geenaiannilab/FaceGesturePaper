@@ -66,12 +66,12 @@ isPair = Stats.Comparison=="Pairwise";
 Stats.PValueAdj(isPair) = Stats.PValue(isPair);  % equals raw p but judged vs alpha
 Stats = movevars(Stats, 'PValueAdj', 'After', 'PValue');
 
+%% Display quick preview
+disp(Stats);
+
 %% Save outputs
 writetable(Stats, 'chi2_summary_stats.csv');        % portable summary (no matrices)
 save('/Users/geena/Dropbox/PhD/SUAinfo/chi2_summary_full.mat','Stats','ContingencyTables');  % full, includes crosstab tables
-
-%% Display quick preview
-disp(Stats);
 
 %% === Append per-region proportions to the Overall rows ===
 % Prereqs: 'regions' is a cellstr or string array with region names in the same
