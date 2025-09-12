@@ -1,5 +1,5 @@
 %%% writen GI 211115 
-%%% preference index = (nExp - [(sum (Ri) / rmax)]) ./ nExp -1 
+%%% gesture preference index = (nExp - [(sum (Ri) / rmax)]) ./ nExp -1 
 %%% 
 %%% Ri = spike rate for expression, i 
 %%% Rmax = max Ri of any expression

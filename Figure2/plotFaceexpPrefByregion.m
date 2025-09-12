@@ -1,3 +1,11 @@
+
+%%%%%%%%
+%%%%%%%% PLOTTING Figure 2D, LEFT 
+%%%%%%%%  Single-Cell Activity and Selectivity in Cortical Face-Motor Regions
+%%%%%%%%
+%%%%%%%% GPI index by region with overlying statistics (no effect of cortical region on GPI)  
+%%%%%%%%% GRI 09/11/2025 
+
 clear all
 set(0,'defaultAxesFontSize',20)
 
@@ -15,6 +23,8 @@ thorRawData4 = load(fullfile(pathToMatFiles, 'Thor_171128/Data4Analysis/171128_T
 thorRawData.depthPref = [thorRawData1.depthPref, thorRawData2.depthPref, thorRawData3.depthPref,thorRawData4.depthPref];
 thorRawData.faceExpPref = [thorRawData1.faceExpPref, thorRawData2.faceExpPref, thorRawData3.faceExpPref,thorRawData4.faceExpPref];
 thorRawData.spikeLabels2plot = [thorRawData1.spikeLabels2plot; thorRawData2.spikeLabels2plot; thorRawData3.spikeLabels2plot; thorRawData4.spikeLabels2plot];
+thorRawData.meanFRs = cat(1, thorRawData1.Ris, thorRawData2.Ris, thorRawData3.Ris, thorRawData4.Ris);
+thorRawData.cortRegion = [thorRawData1.cortRegion thorRawData2.cortRegion thorRawData3.cortRegion thorRawData4.cortRegion]';
 
 
 barneyRawData1 = load(fullfile(pathToMatFiles, 'Barney_210704/Data4Analysis/210704_barney_faceExpPref_V3.mat'));
@@ -24,6 +34,8 @@ barneyRawData3 = load(fullfile(pathToMatFiles, 'Barney_210706/Data4Analysis/2107
 barneyRawData.depthPref = [barneyRawData1.depthPref, barneyRawData2.depthPref, barneyRawData3.depthPref];
 barneyRawData.faceExpPref = [barneyRawData1.faceExpPref, barneyRawData2.faceExpPref, barneyRawData3.faceExpPref];
 barneyRawData.spikeLabels2plot = [barneyRawData1.spikeLabels2plot; barneyRawData2.spikeLabels2plot; barneyRawData3.spikeLabels2plot];
+barneyRawData.meanFRs = cat(1, barneyRawData1.Ris, barneyRawData2.Ris, barneyRawData3.Ris);
+barneyRawData.cortRegion = [barneyRawData1.cortRegion barneyRawData2.cortRegion barneyRawData3.cortRegion]';
 
 %% Set up basic variables
 pValueThreshold = 0.05;
@@ -43,21 +55,6 @@ regions{3}.channels = 129:192;
 regions{4}.label = 'M3';
 regions{4}.channels = 193:240;
 
-% regions{2}.label = 'M1m';
-% regions{2}.channels = 33:64;
-% if includeF4
-%     regions{3}.label = 'M1lat';
-%     regions{3}.channels = 65:128;
-% else
-%     regions{3}.label = 'M1lat';
-%     regions{3}.channels = 65:96;
-% end
-% regions{4}.label = 'PMv';
-% regions{4}.channels = 129:192;
-% regions{5}.label = 'M3';
-% regions{5}.channels = 193:240;
-
-
 % Loop around regions. For each region: 1) identify relevant indices from
 % spikeLabels2Plot, 2) take these indices and & stash the result
     for rr = 1:length(regions)
@@ -69,20 +66,6 @@ regions{4}.channels = 193:240;
         
     end
     
-% put together all the results 
-% barneyResults.lateralRegions.faceExpPrefIndex = cat(2, barneyResults.M1m.faceExpPrefIndex, barneyResults.M1lat.faceExpPrefIndex, barneyResults.PMv.faceExpPrefIndex);
-% barneyResults.lateralRegions.depthPrefIndex = cat(2, barneyResults.M1m.depthPrefIndex, barneyResults.M1lat.depthPrefIndex, barneyResults.PMv.depthPrefIndex);
-% barneyResults.lateralRegions.totalNumberOfCells = barneyResults.M1m.totalNumberOfCells + barneyResults.M1lat.totalNumberOfCells + barneyResults.PMv.totalNumberOfCells;
-% 
-barneyResults.combinedM1.faceExpPrefIndex = cat(2, barneyResults.M1.faceExpPrefIndex);
-barneyResults.combinedM1.depthPrefIndex = cat(2, barneyResults.M1.depthPrefIndex);
-barneyResults.combinedM1.totalNumberOfCells = barneyResults.M1.totalNumberOfCells;
-
-barneyResults.nonM1.faceExpPrefIndex = cat(2, barneyResults.PMv.faceExpPrefIndex, barneyResults.M3.faceExpPrefIndex);
-barneyResults.nonM1.depthPrefIndex = cat(2, barneyResults.PMv.depthPrefIndex, barneyResults.M3.depthPrefIndex);
-barneyResults.nonM1.totalNumberOfCells = barneyResults.PMv.totalNumberOfCells + barneyResults.M3.totalNumberOfCells;
-
-
 
 %% Get Thor's data
 
@@ -97,16 +80,6 @@ regions{3}.label = 'PMv';
 regions{3}.channels = 97:128;
 regions{4}.label = 'M3';
 regions{4}.channels = 129:192;
-
-% regions{2}.label = 'M1m';
-% regions{2}.channels = 33:64;
-% regions{3}.label = 'M1lat';
-% regions{3}.channels = 65:96;
-% regions{4}.label = 'PMv';
-% regions{4}.channels = 97:128;
-% regions{5}.label = 'M3';
-% regions{5}.channels = 129:192;
-
 
 % Loop around regions. For each region: 1) identify relevant indices from
 % spikeLabels2Plot, & stash the result
@@ -125,18 +98,9 @@ for rr = 1:length(regions)
     combinedResults.(regions{rr}.label).totalNumberOfCells = barneyResults.(regions{rr}.label).totalNumberOfCells + thorResults.(regions{rr}.label).totalNumberOfCells;
 end
 
-% put together all the results 
-% thorResults.lateralRegions.faceExpPrefIndex = cat(2, thorResults.M1m.faceExpPrefIndex, thorResults.M1lat.faceExpPrefIndex, thorResults.PMv.faceExpPrefIndex);
-% thorResults.lateralRegions.depthPrefIndex = cat(2, thorResults.M1m.depthPrefIndex, thorResults.M1lat.depthPrefIndex, thorResults.PMv.depthPrefIndex);
-% thorResults.lateralRegions.totalNumberOfCells = thorResults.M1m.totalNumberOfCells + thorResults.M1lat.totalNumberOfCells + thorResults.PMv.totalNumberOfCells;
-
 thorResults.combinedM1.faceExpPrefIndex = cat(2, thorResults.M1.faceExpPrefIndex);
 thorResults.combinedM1.depthPrefIndex = cat(2, thorResults.M1.depthPrefIndex);
 thorResults.combinedM1.totalNumberOfCells = thorResults.M1.totalNumberOfCells ;
-
-thorResults.nonM1.faceExpPrefIndex = cat(2, thorResults.PMv.faceExpPrefIndex, thorResults.M3.faceExpPrefIndex);
-thorResults.nonM1.depthPrefIndex = cat(2, thorResults.PMv.depthPrefIndex, thorResults.M3.depthPrefIndex);
-thorResults.nonM1.totalNumberOfCells = thorResults.PMv.totalNumberOfCells + thorResults.M3.totalNumberOfCells;
 
 % concatente both animals for plotting 
 cmap1 = [         
