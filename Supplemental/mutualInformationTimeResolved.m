@@ -1,17 +1,17 @@
 %% ================== USER SETTINGS ==================
-dates   = {'Barney_210704','Barney_210706','Barney_210805'...
-    'Thor_171005','Thor_171010','Thor_171027','Thor_171128'};
+dates   = {'Thor_171005','Thor_171010','Thor_171027','Thor_171128',...
+    'Barney_210704','Barney_210706','Barney_210805'};
 baseDir = '~/Dropbox/PhD/SUAInfo/';
 runSim = false; 
 set(0,'defaultAxesFontSize',20)
 
 % Time-resolved MI parameters
-win_ms    = 200;           % window length (ms)
-step_ms   = 2;            % step between windows (ms)
+win_ms    = 400;           % window length (ms)
+step_ms   = 10;            % step between windows (ms)
 nShuffles = 200;           % gesture label shuffles per window
 alpha_bin = 0.05;          % per-bin (cluster-forming) alpha (one-sided)
-nPerm     = 1000;          % cluster permutations (sign-flips across neurons)
-minRun    = 5;             % minimum consecutive bins to declare latency (e.g., 1)
+nPerm     = 10000;          % cluster permutations (sign-flips across neurons)
+minRun    = 2;             % minimum consecutive bins to declare latency (e.g., 1)
 
 baseColors = [0.494 0.184 0.556; 0.635 0.078 0.184; 0.85 0.325 0.098; 0.929 0.694 0.125];
 
@@ -373,24 +373,65 @@ function shade_sig_regions(t, y, mask, col)
 end
 
 function plot_example_psth(spikes_tr, taxis2take, labels, binSize)
+% spikes_tr: [trials x time] counts
+% labels   : [trials x 1] (non-contiguous ok)
+% binSize  : seconds per bin
+% Plots trial-averaged PSTH per gesture with Gaussian smoothing (σ=50 ms),
+% ±2 SEM shaded bands, and edge-safe "normalized convolution".
 
-% spikes_tr: [trials x time] counts; labels: [trials x 1] (non-contiguous ok)
-% Gaussian smoothing σ=50 ms; gestures: red, blue, green
     if isempty(spikes_tr), axis off; return; end
 
-    % Gaussian kernel (σ=50 ms)
-    sigma = 0.05; half = round(5*sigma/binSize);
-    gk = exp(-(-half:half).^2 / (2*(sigma/binSize)^2)); gk = gk/sum(gk);
+    % ---- Gaussian kernel (σ = 50 ms) ----
+    sigma = 0.05;                             % 50 ms
+    half  = max(1, round(5*sigma/binSize));   % 5σ support
+    tker  = -half:half;
+    gk    = exp( - (tker.^2) / (2*(sigma/binSize)^2) );
+    gk    = gk / sum(gk);
 
-    u = unique(labels,'stable');    % keep original label order
-    cols = [1 0 0; 0 0 1; 0 0.7 0]; % red, blue, green
-    for gi = 1:min(3,numel(u))
-        trials = labels==u(gi);
-        fr = mean(spikes_tr(trials,:),1)/binSize;             % Hz
-        fr_sm = conv(fr,gk,'same');
-        plot(taxis2take, fr_sm, 'LineWidth',2, 'Color', cols(gi,:)); hold on;
+    % Precompute edge normalization vector once (same length as time axis)
+    T    = size(spikes_tr,2);
+    normVec = conv(ones(1,T), gk, 'same');    % effective kernel area at each edge
+    normVec = max(normVec, eps);              % avoid divide-by-zero
+
+    u    = unique(labels,'stable');
+    cols = [1 0 0; 0 0 1; 0 0.7 0];           % red, blue, green
+    nC   = min(3, numel(u));
+    hold on;
+
+    for gi = 1:nC
+        mask = (labels == u(gi));
+        if ~any(mask), continue; end
+
+        % Convert to firing rate (Hz) per trial
+        fr_trials = double(spikes_tr(mask,:)) / binSize;   % [nTrials_g x T]
+
+        % ---- Smooth EACH TRIAL with normalized convolution (edge-safe) ----
+        fr_sm = zeros(size(fr_trials));
+        for tr = 1:size(fr_trials,1)
+            y  = conv(fr_trials(tr,:), gk, 'same');
+            fr_sm(tr,:) = y ./ normVec;                    % <-- fixed edges
+        end
+
+        % ---- Mean and SEM across trials ----
+        mu  = mean(fr_sm, 1, 'omitnan');
+        sd  = std( fr_sm, 0, 1, 'omitnan');
+        n   = sum(~isnan(fr_sm), 1);
+        sem = sd ./ max(1, sqrt(n));
+
+        % ---- Plot shaded ±2*SEM band and mean ----
+        c = cols(gi,:);
+        yy_lower = mu - 2*sem;
+        yy_upper = mu + 2*sem;
+
+        patch([taxis2take, fliplr(taxis2take)], ...
+              [yy_lower,    fliplr(yy_upper)], ...
+              c, 'FaceAlpha', 0.15, 'EdgeColor', 'none');
+        plot(taxis2take, mu, 'LineWidth', 2, 'Color', c);
     end
+
     xlabel('Time (s)'); ylabel('Firing rate (Hz)');
-    legend(arrayfun(@(x) sprintf('Gesture %s', string(x)), u(1:min(3,numel(u))),'UniformOutput',false), ...
-           'Location','best'); grid on;
+    legend(arrayfun(@(x) sprintf('Gesture %s', string(x)), u(1:nC), 'UniformOutput', false), ...
+           'Location','best');
+    grid on;
 end
+

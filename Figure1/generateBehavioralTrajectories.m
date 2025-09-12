@@ -175,18 +175,22 @@ for bhv = 1:length(bhvs2plot)
 end
 
 %%% do the TSNE calculations
-
+%%
 if runTSNE
+
     nPCs2use = find(cumsum(latent) ./sum(latent) >= 0.95,1,'first');
-    tsneResults = tsne(score(:,1:nPCs2use));
+    data = score(:,1:nPCs2use);
+    tsneResults = tsne_reproducible(data, 123, 'NumDimensions', 2, 'Perplexity', 30);
+   
+    % Save result for later
     figure;
-    h = gscatter(tsneResults(:,1), tsneResults(:,2),allBhv.trialTypeData,'rbg',[],12);
+    h = gscatter(tsneResults.Y(:,1), tsneResults.Y(:,2),allBhv.trialTypeData,'rbg',[],12);
     legend('Threat','Lipsmack','Chew'); legend boxoff
     xlabel('t-SNE 1');
     ylabel('t-SNE 2');
     title('Characterization of Three Facial Expressions');
 end
-
+%%
 %% per expression type, per trial, extract new projection of markers 
 %  bhvTraj(bhv).data = nTimepoints x nMarkers x nTrials 
 for bhv = 1:length(bhvs2plot)
@@ -224,12 +228,44 @@ percentVar = explained;
 
 clear DLCin; clear obhv; clear DLCmarkers;
 
+%% save tSNE embedding 
+    save('tsne_run123.mat','R');
+
 %% save files 
 outDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
 save([outDir '/markerTrajectories.mat'], ...
     'bhvTraj','PCweights','meanPos', 'coeff','latent','explained','taxis','bhvs2plot','gestureNames','markerData2plot','markerLabels','customColormap');
 
 %%
+function result = tsne_reproducible(X, seed, varargin)
+%TSNE_REPRODUCIBLE Run t-SNE with a fixed RNG seed and save state
+%
+% result = tsne_reproducible(X, seed, ...)
+%   X       : data matrix [N x D]
+%   seed    : integer seed for reproducibility
+%   varargin: extra parameters passed to tsne()
+%
+% result.Y   : the embedding [N x 2] (or higher if specified)
+% result.rng : RNG state used before tsne() started
+% result.seed: the seed provided
+
+    % Save RNG state before running
+    prevRng = rng;             % store to restore later if you like
+    rng(seed);                 % set deterministic seed
+    
+    rngState = rng;            % record exact RNG state used
+    Y = tsne(X, varargin{:});  % run tsne with user options
+    
+    % Pack results
+    result.Y    = Y;
+    result.rng  = rngState;
+    result.seed = seed;
+    
+    % Restore previous RNG state so this call doesn’t affect your workflow
+    rng(prevRng);
+end
+
+
 function [bhvOut,downsampledTimeBaseVector] = rebinBhv(bhvIn, timeBaseOld, newBinsize)
     
 downsampledTimeBaseVector = timeBaseOld(1):newBinsize:timeBaseOld(end);

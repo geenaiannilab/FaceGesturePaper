@@ -9,6 +9,8 @@ subject = 'Barney';
 date = '210704';
 workDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
 tsneResults = load([workDir '/markerTrajectoriesTSNE.mat']);
+tsneResults = tsneResults.tsneResults;
+
 load([workDir '/markerTrajectories.mat']);
 scalar = 3000; 
 tmin = taxis(1); tmax = taxis(end);
@@ -40,10 +42,7 @@ end
 title('Starting Position for All Trials');
 clear markerData2plot; 
 
-%% tSNE embedding per trial 
-allBhv = tsneResults.allBhv;
-tsneResults = tsneResults.tsneResults;
-
+%% tSNE embedding 
 figure;
 h = gscatter(tsneResults.Y(:,1), tsneResults.Y(:,2),allBhv.trialTypeData,'rbg',[],12);
 legend('Threat','Lipsmack','Chew'); legend boxoff

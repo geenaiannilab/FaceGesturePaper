@@ -6,15 +6,15 @@ set(0,'defaultAxesFontSize',24);
 set(0,'defaultAxesFontWeight','bold');
 
 %% data params 
-subject = 'Barney';%'Thor';
-date = '210704';%'171010';
-runTSNE = false;
-subsessions2plot = [2:5 7:10] %[6];
+subject = 'Barney';
+date = '210704';
+runTSNE = true;
+subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
-newBinSize = 0.01;
-tmin = 1;
+newBinSize = 0.1;
+tmin = 0.5;
 tmax = 1;
 centerNormalizeFlag = 0;
 centerFlag = 1;
@@ -110,26 +110,20 @@ for ss = 1:length(subs2use)
     fmax = tmax*bhvSR;
 
     allOnsets = cell2mat(obhvThis.evScore(:,1));
-    
-    % only trials that started >1 s after recording, and finished in time
-    theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
-    
-    % only trials as above, IN ADDITION, only bhv = 1,2,4
-    theseTrials = logical(allTrials .* theseTrials);
-    
-    theseOnsets = allOnsets(theseTrials); % handscored index, in subsession
-    
+
     if strcmpi(sessionID, 'Thor-171010-154538') 
         disp(['sessionID = ' sessionID '  -- adjusting onsets for video export']);
-        theseOnsets = theseOnsets - 2000; 
-        idx2take = (theseOnsets-fmin) >= 0;
-        theseOnsets = theseOnsets(idx2take);
-        theseTrials= theseTrials(idx2take);
-
+        allOnsets = allOnsets - 2000; 
+        %theseOnsets = theseOnsets((theseOnsets-fmin) >= 0);
     end
-    
+
+    theseTrials = (allOnsets >= (fmin )) & (allOnsets + fmax <= nFramesExported);
+    theseTrials = logical(allTrials .* theseTrials);
+        
     trialTypes = cell2mat(obhvThis.evScore(theseTrials,5));
     nTotalTrials(ss,:) = hist(trialTypes,bhvs2plot);
+
+    theseOnsets = allOnsets(theseTrials); % handscored index, in subsession
 
     % extract trialData
     for tt = 1:length(theseOnsets)
@@ -169,30 +163,33 @@ end
 %  bhvTraj(bhv).data = nTimepoints x nMarkers x nTrials 
 for bhv = 1:length(bhvs2plot)
 
-    data2grab = (allBhv.trialTypeData) == bhvs2plot(bhv);
+    theseTrials = (allBhv.trialTypeData) == bhvs2plot(bhv);
     trialDur = length(downsampledTimeAxis);
     nTrials = sum(nTotalTrials);
 
-    bhvTraj(bhv).data = reshape(score(data2grab,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
-    % nTrials(bhv) is 26 but score(data2grab,:)) is only 25 trials 
+    bhvTraj(bhv).data = reshape(score(theseTrials,:),[trialDur, nTrials(bhv),size(DLCmarkers,2)]);
+    
     bhvTraj(bhv).avg = squeeze(mean(bhvTraj(bhv).data,2));
     bhvTraj(bhv).sem = squeeze(std(bhvTraj(bhv).data,[],2) ./ sqrt(nTrials(bhv)));
 
 end
 
 %%% do the TSNE calculations
-
+%%
 if runTSNE
+
     nPCs2use = find(cumsum(latent) ./sum(latent) >= 0.95,1,'first');
-    tsneResults = tsne(score(:,1:nPCs2use));
+    data = score(:,1:nPCs2use);
+    tsneResults = tsne_reproducible(data, 123, 'NumDimensions', 2, 'Perplexity', 30);
+    % Save result for later
     figure;
-    h = gscatter(tsneResults(:,1), tsneResults(:,2),allBhv.trialTypeData,'rbg',[],12);
+    h = gscatter(tsneResults.Y(:,1), tsneResults.(:,2),allBhv.trialTypeData,'rbg',[],12);
     legend('Threat','Lipsmack','Chew'); legend boxoff
     xlabel('t-SNE 1');
     ylabel('t-SNE 2');
     title('Characterization of Three Facial Expressions');
 end
-
+%%
 %% per expression type, per trial, extract new projection of markers 
 %  bhvTraj(bhv).data = nTimepoints x nMarkers x nTrials 
 for bhv = 1:length(bhvs2plot)
@@ -230,12 +227,44 @@ percentVar = explained;
 
 clear DLCin; clear obhv; clear DLCmarkers;
 
+%% save tSNE embedding 
+    save('tsne_run123.mat','R');
+
 %% save files 
 outDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
-save([outDir '/markerTrajectories_tmp.mat'], ...
+save([outDir '/markerTrajectories.mat'], ...
     'bhvTraj','PCweights','meanPos', 'coeff','latent','explained','taxis','bhvs2plot','gestureNames','markerData2plot','markerLabels','customColormap');
 
 %%
+function result = tsne_reproducible(X, seed, varargin)
+%TSNE_REPRODUCIBLE Run t-SNE with a fixed RNG seed and save state
+%
+% result = tsne_reproducible(X, seed, ...)
+%   X       : data matrix [N x D]
+%   seed    : integer seed for reproducibility
+%   varargin: extra parameters passed to tsne()
+%
+% result.Y   : the embedding [N x 2] (or higher if specified)
+% result.rng : RNG state used before tsne() started
+% result.seed: the seed provided
+
+    % Save RNG state before running
+    prevRng = rng;             % store to restore later if you like
+    rng(seed);                 % set deterministic seed
+    
+    rngState = rng;            % record exact RNG state used
+    Y = tsne(X, varargin{:});  % run tsne with user options
+    
+    % Pack results
+    result.Y    = Y;
+    result.rng  = rngState;
+    result.seed = seed;
+    
+    % Restore previous RNG state so this call doesn’t affect your workflow
+    rng(prevRng);
+end
+
+
 function [bhvOut,downsampledTimeBaseVector] = rebinBhv(bhvIn, timeBaseOld, newBinsize)
     
 downsampledTimeBaseVector = timeBaseOld(1):newBinsize:timeBaseOld(end);
