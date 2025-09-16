@@ -1,8 +1,17 @@
-%%%% written 250907
-%%%% plots the output of PSID decoding (all regions; Figure 4A from
-%%%% manuscript) 
-%%%% Versus decoding performance of a shuffled, null dataset 
-%%%% and runs stats 
+
+%%%%%%%%
+%%%%%%%% PLOTTING Figure 4A, 4B
+%%%%%%%%  Kinematic decoding and non-preserved neural correlations
+%%%%%%%%
+%%%%%%%% Plots per region decoding accuracies 
+%%%%%%%% defined as cross-correlation between actual and predicted face PCs
+%%%%%%%% on held out individual trials
+%%%%%%%%
+%%%%%%%% Versus decoding performance of a shuffled, null dataset 
+%%%%%%%% and runs stats, FDR-corr (between regions, also each region v. its null) 
+%%%%%%%%% GRI 09/11/2025 
+
+
 
 clear all; %close all; 
 set(0,'defaultAxesFontSize', 18); % bc im blind 

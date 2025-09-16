@@ -1,8 +1,15 @@
-%%%% written 250907
-%%%% plots the output of PSID decoding (all regions; Figure 4A from
-%%%% manuscript) 
-%%%% Versus decoding performance of a shuffled, null dataset 
-%%%% and runs stats 
+
+%%%%%%%%
+%%%%%%%% PLOTTING Figure 4A, 4B
+%%%%%%%%  Kinematic decoding and non-preserved neural correlations
+%%%%%%%%
+%%%%%%%% Plots per region decoding accuracies 
+%%%%%%%% defined as CC between  
+%%%%%%%% Versus decoding performance of a shuffled, null dataset 
+%%%%%%%% and runs stats, FDR-corr (between regions, also each region v. its null) 
+%%%%%%%%% GRI 09/11/2025 
+
+
 
 clear all; %close all; 
 set(0,'defaultAxesFontSize', 18); % bc im blind 
@@ -357,7 +364,10 @@ end
 
 %% not included in paper:
 %% for each region, plot the decoding accuracy of the NEURAL data ('allNeuralSelf')
-%% for both the 
+%% for both the full model (two stage, behaviorally relevant + irrelevant dynamics) 
+%% and for the limited model (1 stage, behaviorally relevant only) 
+%% the ratio of these neural self-prediction accuracies ranges 0-1 , where 1 indicates 
+%% ALL behaviorally relevant info (here, face kinematics), and 0 indicates all 'other' info
 ratio = mean(allNeuralSelfFirstMean,1) ./ mean(allNeuralSelfFullMean,1);
 ratioErr = mean(allNeuralSelfFirstErr,1);
 
