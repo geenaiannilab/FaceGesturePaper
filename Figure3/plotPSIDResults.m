@@ -12,7 +12,7 @@ set(0,'defaultAxesFontWeight', 'bold'); % bc im blind
 
 % define the dataset you are running
 thisSubj = 'combined';
-pseudoPop = 'ThrOnly/balanced'; % vs 'unbalanced'
+pseudoPop = 'LSOnly/balanced'; % vs 'unbalanced'
 subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
 nIterations = 25; % pseduopopulations
 popSize = '50'; % nCells
@@ -97,18 +97,18 @@ title(['Mean ' outcomeMetric ' : Decoding ' extractBefore(pseudoPop,'/') ])
 
 %%
 % N1 and Nx distributions
-figure;
-subplot 121
-beeswarm(x',alldistN1','sort_style','rand','overlay_style','ci','colormap',regionCmap);
-axes1 = gca; axes1.XTick = 2:2:2*length(regionList); axes1.XTickLabel = regionList; 
-ylabel('N1: Optimal # Behaviorally Relevant States')
-
-subplot 122
-beeswarm(x',alldistNX','sort_style','rand','overlay_style','ci','colormap',regionCmap);
-axes2 = gca; axes2.XTick = 2:2:2*length(regionList); axes2.XTickLabel = regionList; 
-ylabel('NX: Optimal Total # States')
-
-sgtitle(['Optimal N1 and NX : ' extractBefore(pseudoPop,'/')]);
+% figure;
+% subplot 121
+% beeswarm(x',alldistN1','sort_style','rand','overlay_style','ci','colormap',regionCmap);
+% axes1 = gca; axes1.XTick = 2:2:2*length(regionList); axes1.XTickLabel = regionList; 
+% ylabel('N1: Optimal # Behaviorally Relevant States')
+% 
+% subplot 122
+% beeswarm(x',alldistNX','sort_style','rand','overlay_style','ci','colormap',regionCmap);
+% axes2 = gca; axes2.XTick = 2:2:2*length(regionList); axes2.XTickLabel = regionList; 
+% ylabel('NX: Optimal Total # States')
+% 
+% sgtitle(['Optimal N1 and NX : ' extractBefore(pseudoPop,'/')]);
 
 % neural self prediction FULL model
 figure;
@@ -194,7 +194,7 @@ for rr = 1:length(regionList)
     %exportgraphics(plotFig, ['~/Dropbox/subFigurePDFs/PSID_kinematics_' extractBefore(pseudoPop,'/') '_' regionList{rr} '.pdf'], 'ContentType', 'vector');
 end
 
-%%
+%% per trial prediction vs actual behavior 
 for bb = 1:nz-1
 
     figure; 

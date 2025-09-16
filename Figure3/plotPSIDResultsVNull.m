@@ -1,5 +1,5 @@
 %%%% written 250907
-%%%% plots the output of PSID decoding (all regions; Figure 3A from
+%%%% plots the output of PSID decoding (all regions; Figure 4A from
 %%%% manuscript) 
 %%%% Versus decoding performance of a shuffled, null dataset 
 %%%% and runs stats 
@@ -9,33 +9,22 @@ set(0,'defaultAxesFontSize', 18); % bc im blind
 
 
 % define the dataset you are running
-thisSubj = 'combined';
-pseudoPop = 'LSonly/balanced'; % vs 'unbalanced'
 subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
-nullModelFlag = true;  nullModelType = 'shuffleBhvTimepoints';
-nNullShuffles = 50;
-
-nPseudopops = 25; % pseduopopulations
 popSize = '50'; % nCells
+nIterations = 25; % pseduopopulations
 outcomeMetric = 'CC'; % vs R2 vs RSME etc
 saveFlag = true; 
+statsPrint = false; 
 
-dataDir = (['/Users/geena/Dropbox/PhD/SUAinfo/PSIDResults2023/Pseudopopulations/' pseudoPop '/' subj '/N_' popSize 'cells/']);
-resultsDir = ['/Users/geena/Dropbox/PhD/SUAinfo/PSIDResults2023/Pseudopopulations/' pseudoPop '/' subj '/N_' popSize 'cells/results'];
+resultsDir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure3/matFiles';
 
-% load one pseudopop true and Null data
+%% define the dataset you are running
 decodingResults = load([resultsDir '/decodingResults.mat' ]); %true results 
-decodingShuffleResults =  load([resultsDir '/decodingNullResults_pp_pooled_byCol.mat']);
+decodingShuffleResults =  load([resultsDir '/decodingNullResults.mat']);
 
-% define the dataset you are running
-thisSubj = 'combined';
-pseudoPop = 'LSOnly/balanced'; % vs 'unbalanced'
-subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
-nIterations = 25; % pseduopopulations
-popSize = '50'; % nCells
 regionList = fieldnames(decodingResults.resultsOut.combined)';
 
-% some info on the data 
+%% parameters on the model search, not relevant here 
 outerFolds = 4; 
 statesBhvRelv = [2 3 4 8 10 12 20]; %  N1 gridsearch  
 additionalStates = [2 4 8 10]; % ** this is NOT Nx (Nx = statesBhvRelv + additional) **
@@ -58,6 +47,7 @@ alldistN1 = [];
 alldistNX = [];
 allIter2plot = [];
 
+%% pool results 
 for rr = 1:length(regionList) 
     theseResults = decodingResults.resultsOut.combined.(regionList{rr});
     shuffledResults = decodingShuffleResults.agg.combined.(regionList{rr});
@@ -77,11 +67,17 @@ for rr = 1:length(regionList)
     alldistNX = [alldistNX theseResults.NX ];
 
     %%% Neural, full model self-prediction accuracy
+    %%%  neuralSelfFullAcc is nCells x nIterations (averaged over folds) 
+    %%% neuralSelfFullMean is nCells (averaged over folds, and iterations) 
     neuralSelfFullAcc = round(squeeze(mean(theseResults.neuralSelfPred2stage,1,'omitnan')),2);
     [neuralSelfFullErr, neuralSelfFullMean] = std(neuralSelfFullAcc,[],2);
+    
+    %%% allNeuralSelfFullMean is nCells x nRegions (averaged over iterations and folds) 
     allNeuralSelfFullMean(:,rr) = round(neuralSelfFullMean,2);
     allNeuralSelfFullErr(:,rr) = round(neuralSelfFullErr,2);
 
+    %%%% analogously, but for neural, 1st stage model self-prediction
+    %%%% accuracy 
     neuralSelfFirstAcc = round(squeeze(mean(theseResults.neuralSelfPred1stage,1,'omitnan')),2);
     [neuralSelfFirstErr, neuralSelfFirstMean] = std(neuralSelfFirstAcc,[],2);
     allNeuralSelfFirstMean(:,rr) = round(neuralSelfFirstMean,2);
@@ -110,7 +106,9 @@ nIterations= size(allShuffled, 2);
 allObsIter = nan(nBhvs, nIterations, nRegions);
 
 for rr = 1:nRegions
+    
     theseResults = decodingResults.resultsOut.combined.(regionList{rr});
+    
     % Average across folds -> nBhvs x nIter
     decodingAcc = squeeze(mean(theseResults.kinematicDecoding,1, 'omitnan'));
     % in case "decodingAcc" came out 1 x nBhvs x nIter, fix orientation
@@ -129,13 +127,14 @@ allNullIter = allShuffled;     % nBhvs x nIter x nRegions
 % ------------- (A) Within-region: observed > null -------------
 p_within   = nan(nBhvs, nRegions);
 z_within   = nan(nBhvs, nRegions);
-r_within   = nan(nBhvs, nRegions);  % effect size r = z/sqrt(N)
-p_permMean = nan(nBhvs, nRegions);  % aux: mean(obs) vs distribution of null (by iteration)
+r_within   = nan(nBhvs, nRegions);  % 
+p_permMean = nan(nBhvs, nRegions);  %
 
 for rr = 1:nRegions
     for bb = 1:nBhvs
         obs = squeeze(allObsIter(bb,:,rr));
         nul = squeeze(allNullIter(bb,:,rr));
+        
         % keep only columns present in BOTH
         msk = isfinite(obs) & isfinite(nul);
         xo  = obs(msk);
@@ -202,7 +201,7 @@ for pi = 1:nPairs
 
         try
             [p,~,stats] = signrank(x1, x2, 'tail','both');  % two-sided
-            z = getfield(stats,'zval'); %#ok<GFLD>
+            z = getfield(stats,'zval');
         catch
             % fallback sign test (two-sided)
             sPos = sum(d>0); N = sum(d~=0);
@@ -220,7 +219,7 @@ end
 p_between_fdr = reshape(bh_fdr_vec(p_between(:), alpha), size(p_between));
 sig_between   = p_between_fdr < alpha;
 
-%% -------- Package results for downstream use/plotting --------
+%% -------- Package results for plotting --------
 decodingStats = struct();
 decodingStats.within.regionList   = regionList(:);
 decodingStats.within.p            = p_within;
@@ -228,7 +227,7 @@ decodingStats.within.p_fdr        = p_within_fdr;
 decodingStats.within.sig_fdr      = sig_within;
 decodingStats.within.z            = z_within;
 decodingStats.within.r            = r_within;        % effect size
-decodingStats.within.p_perm_mean  = p_permMean;      % aux
+decodingStats.within.p_perm_mean  = p_permMean;      
 
 pairNames = cell(nPairs,1);
 for i = 1:nPairs
@@ -243,34 +242,35 @@ decodingStats.between.r           = r_between;
 decodingStats.between.diffMean    = diffMean;
 
 %% (Optional) quick textual summary
-fprintf('\nWithin-region (observed > null), FDR α=%.2f:\n', alpha);
-for rr = 1:nRegions
-    for bb = 1:nBhvs
-        fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), r=%.2f, p_permMean=%.3g\n', ...
-            regionList{rr}, bb, ...
-            p_within(bb,rr), p_within_fdr(bb,rr), r_within(bb,rr), ...
-            p_permMean(bb,rr));
+if statsPrint
+    fprintf('\nWithin-region (observed > null), FDR α=%.2f:\n', alpha);
+    for rr = 1:nRegions
+        for bb = 1:nBhvs
+            fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), r=%.2f, p_permMean=%.3g\n', ...
+                regionList{rr}, bb, ...
+                p_within(bb,rr), p_within_fdr(bb,rr), r_within(bb,rr), ...
+                p_permMean(bb,rr));
+        end
     end
-end
 
-fprintf('\nBetween-region differences (two-sided), FDR α=%.2f:\n', alpha);
-for pi = 1:nPairs
-    for bb = 1:nBhvs
-        if sig_between(bb,pi)
-            fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), Δ=%.3f\n', ...
-                pairNames{pi}, bb, p_between(bb,pi), p_between_fdr(bb,pi), diffMean(bb,pi));
+    fprintf('\nBetween-region differences (two-sided), FDR α=%.2f:\n', alpha);
+    for pi = 1:nPairs
+        for bb = 1:nBhvs
+            if sig_between(bb,pi)
+                fprintf('  %s | pred %d: p=%.3g (FDR=%.3g), Δ=%.3f\n', ...
+                    pairNames{pi}, bb, p_between(bb,pi), p_between_fdr(bb,pi), diffMean(bb,pi));
+            end
         end
     end
 end
 
-
-%% plot it all 
+%% plot it all with stats (supplemental figure) 
 plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
     allShuffledMean, allShuffledErr, ...
-    regionList, regionCmap, outcomeMetric, pseudoPop, decodingStats, ...
+    regionList, regionCmap, outcomeMetric, decodingStats, ...
     'Alpha', 0.05, 'MaxPairsPerGroup', 3, 'YLim', [0 0.8]);
 
-%% plot all decoding Mean 
+%% plot all decoding Mean (without stats, Fig 4A) 
 figure;
 b = bar(allDecodingMean);
 for rr = 1:length(regionList)
@@ -306,16 +306,113 @@ for i = 1:nbars
     er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 1.5;
 end
 
-legend(regionList); xlabel('Face Motion PC'); ylabel(outcomeMetric)
-title(['Mean ' outcomeMetric ' : Decoding ' extractBefore(pseudoPop,'/') ])
-%
 ylim([0 0.8])
+legend(regionList); xlabel('Face Motion PC'); ylabel('Cross Correlation')
+title('Kinematic Decoding Performance');
+
+%% Fig 4B ; plot single iteration result (predicted vs actual face PC) 
+[~, iter2plot] = max(decodingAcc,[],2); ii = mode(iter2plot);
+
+for rr = 1:length(regionList) 
+    
+    theseResults = decodingResults.resultsOut.combined.(regionList{rr});
+
+    outerBhvTestC = cell2mat(theseResults.bhvTest{ii});
+    outerBhvPredC = cell2mat(theseResults.bhvPred{ii});
+    outerBhvTest = theseResults.bhvTest{ii};
+    
+    heldOutBhvTest = reshape(outerBhvTestC,length(taxis),length(outerBhvTest),nz);
+    heldOutBhvPred = reshape(outerBhvPredC,length(taxis),length(outerBhvTest),nz);
+    
+    figure('units','normalized','outerposition',[0 0 1 1])
+    ha = tight_subplot(1,3,0.125,[0.075 0.1],[0.1 0.05]);
+
+    for bb = 1:nz-2 % each predicted bhvPC
+        
+        test1Y = mean(heldOutBhvTest(:,:,bb),2);
+        test1Err = 2*(std(heldOutBhvTest(:,:,bb),[],2) ./ sqrt(length(outerBhvTest)));
+    
+        pred1Y = mean(heldOutBhvPred(:,:,bb),2);
+        pred1Err = 2*(std(heldOutBhvPred(:,:,bb),[],2) ./ sqrt(length(outerBhvTest)));
+        
+        axes(ha(bb))
+        shadedErrorBar(taxis,test1Y,test1Err,'lineprops',{'Color','k','linew',8});
+        hold on;
+        shadedErrorBar(taxis, pred1Y,pred1Err,'lineprops',{'Color',[0.3010 0.5 0.9],'linew',8});
+        hold off
+
+        title(['Face PC' num2str(bb)],'FontSize',26)
+        set(ha(bb), 'YTickLabelMode','auto'); legend ('actual', 'predicted')
+        xlim([-0.5 1.5])
+        if bb == 1 
+            xlabel('Time, s'); ylabel('a.u.'); 
+            legend('true','pred')
+        end
+
+    end
+
+    set(ha(1:nz-2),'XTickLabel',[-0.5 0 0.5 1 1.5]); 
+    sgtitle([regionList{rr} 'Iter = ' num2str(ii)],'FontSize',36,'FontWeight','bold')
+end
+
+%% not included in paper:
+%% for each region, plot the decoding accuracy of the NEURAL data ('allNeuralSelf')
+%% for both the full model (two stage, behaviorally relevant + irrelevant dynamics) 
+%% and for the limited model (1 stage, behaviorally relevant only) 
+%% the ratio of these neural self-prediction accuracies ranges 0-1 , where 1 indicates 
+%% ALL behaviorally relevant info (here, face kinematics), and 0 indicates all 'other' info
+ratio = mean(allNeuralSelfFirstMean,1) ./ mean(allNeuralSelfFullMean,1);
+ratioErr = mean(allNeuralSelfFirstErr,1);
+
+% neural self prediction FULL model
+figure;
+subplot 131
+x = categorical(regionList); x = reordercats(x, {'S1','M1','PMv','M3','All'});
+b = bar(x, mean(allNeuralSelfFullMean,1),'facecolor','flat'); b.CData = regionCmap;
+hold on; 
+
+er = errorbar(x,mean(allNeuralSelfFullMean,1), mean(allNeuralSelfFullErr,1),'HandleVisibility','off');
+er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 3;
+hold off; 
+ylabel(outcomeMetric);ylim([0 1]);
+title('Neural Self Predict, Full Model ');
+
+% neural self prediction FIRST stage only 
+subplot 132;
+x = categorical(regionList); x = reordercats(x, {'S1','M1','PMv','M3','All'});
+b = bar(x, mean(allNeuralSelfFirstMean,1),'facecolor','flat'); b.CData = regionCmap;
+hold on; 
+
+er = errorbar(x,mean(allNeuralSelfFirstMean,1), mean(allNeuralSelfFirstErr,1),'HandleVisibility','off');
+er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 3;
+hold off; 
+ylabel(outcomeMetric); ylim([0 1]);
+title('Neural Self Predict, First Stage Only Model ');
+
+% ratio 
+subplot 133;
+x = categorical(regionList); x = reordercats(x, {'S1','M1','PMv','M3','All'});
+b = bar(x, ratio,'facecolor','flat'); b.CData = regionCmap;
+hold on; 
+
+er = errorbar(x,ratio, ratioErr,'HandleVisibility','off');
+er.Color = [0 0 0]; er.LineStyle = 'none'; er.LineWidth = 3;
+hold off; 
+ylim([0 1]);
+title('Ratio: Kinematic/All Other Information');
+
+disp(['Average Neural, Full Model        ' outcomeMetric ' : ' num2str(mean(allNeuralSelfFullMean,1))]);
+disp(['Average Neural First-stage only   ' outcomeMetric ' : ' num2str(mean(allNeuralSelfFirstMean,1))]);
+disp(['Kinematic : AllOther Info Ratio = ' num2str(ratio)]);
+disp(['                                 +/-' num2str(ratioErr)])
 
 
 
+
+%% plotting helper 
 function plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
     allShuffledMean, allShuffledErr, regionList, regionCmap, ...
-    outcomeMetric, pseudoPop, decodingStats, varargin)
+    outcomeMetric, decodingStats, varargin)
 % Plot decoding (colored bars) vs. shuffle null (grey/black bars) with significance.
 %
 % Inputs match your arrays:
@@ -326,7 +423,6 @@ function plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
 %   regionList      : 1 x nRegions cellstr
 %   regionCmap      : nRegions x 3 RGB in 0–1
 %   outcomeMetric   : e.g., 'CC'
-%   pseudoPop       : string used in title
 %   decodingStats   : struct from the earlier stats block
 %
 % Name-Value (optional):
@@ -385,8 +481,8 @@ for i = 1:nbarsN
 end
 
 legend(regionList, 'Location','best'); 
-xlabel('Face Motion PC'); ylabel(outcomeMetric);
-title(sprintf('Mean %s : Decoding %s', outcomeMetric, extractBefore(pseudoPop,'/')));
+xlabel('Face Motion PC'); ylabel('Cross Correlation, (CC)');
+title('Kinematic Decoding Performance');
 grid on;
 
 % baseline y-limits
@@ -467,7 +563,7 @@ end
 
 end
 
-% --------- helpers ----------
+%% --------- helpers ----------
 function s = p2stars(p)
 % Convert p-value to asterisks (FDR-corrected p recommended)
 if ~isfinite(p) || p>=0.05
