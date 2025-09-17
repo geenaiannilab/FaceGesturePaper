@@ -1,19 +1,23 @@
 % written GI
 %%%
-% PUPRPOSE: compute the 1) correlation between all neuron pairs over time (trial-avgeraged)
-%%%                            2) noise correlations between all neuron pairs (per trial)
-%%%                            3) for #1, cluster & sort neurons based on
+% PUPRPOSE: compute the 1) correlation between all neuron pairs over time (trial-averaged)
+%%%                            cluster & sort neurons based on
 %%%                            similarity of correlational values
+%%%                     2) compute the rank order of each matrix (upper
+%%%                             triangle) 
+%%%                     3) save the sorted and unsorted correlation
+%%%                             matrices for plotting 
+
+
 
 clear all; close all;
 set(0,'defaultAxesFontSize', 24); % bc im blind
 set(0,'defaultAxesFontWeight', 'bold'); % bc im blind
 
-date = '210704';
-subject ='Barney';
+date = '171128';
+subject ='Thor';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 outdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/CorrMatricesV2']);
-simulationFlag = true; 
 
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
@@ -21,7 +25,7 @@ bhvStrings = {'Threat','Lipsmack','Chew'};
 nClust = 5;
 defBhv = 2;
 
-saveFlag = true;
+saveFlag = false;
 
 win = 0.02; % in sec
 tmin = 0.5; tmax = 1;
@@ -67,7 +71,7 @@ else
 end
 
 % do separately for all regions
-for aa = 5;%1:length(regions)
+for aa = 1:length(regions)
 
     chls = regions{1,aa}.channels;
     region = regions{1,aa}.label;

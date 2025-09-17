@@ -26,7 +26,7 @@ for pp = 4:nPseudopops
    tic 
 
    % run true results
-   % trueResults = runCorePSIDAnalysis(trueData, thisSubj, regionList, outcomeMetric);
+    trueResults = runCorePSIDAnalysis(trueData, thisSubj, regionList, outcomeMetric);
 
     % run null shuffles
     for nn = 1:nNullShuffles
