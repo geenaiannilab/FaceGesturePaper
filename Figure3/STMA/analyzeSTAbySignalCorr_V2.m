@@ -1,6 +1,7 @@
 % written GI 
 %%%     
-%%    only taking cells into account with adequately large STAs, this will calculate 1) their 2D spatial correlations 2) their signal correlations 3) the relationship between the two metrics 
+%%    only taking cells into account with adequately large STAs, this will calculate 
+%% 1) their 2D spatial correlations 2) their signal correlations 3) the relationship between the two metrics 
 
 
 close all;

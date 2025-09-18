@@ -1,11 +1,23 @@
 
+%%%%%%%% PLOTTING Figure S5A, S5B 
+%%%%%%%%  Kinematic decoding and non-preserved neural correlations
+%%%%%%%%
+%%%%%%%%  Plots all Spearman's rho values (large for preserved rank-order, small if not) 
+%%%%%%% (1 value per day, between pairwise correlations:
+%%%%%%        threat-lipsmack, threat-chew, lipsmack-chew); 
+%%%%%%% GRI 09/11/2025 
+%%%%%%%
+%%%%%%% Rank-order similarity of gesture matrix pairs across all neurons, one value per recording and per gesture-matrix comparison (threat–lipsmack, threat–chew, lipsmack–chew). 
+%%%%%%%  Per day we computed Spearman%s ρ. 
+%%%%%%% Significance for each day's ρ was obtained with a Mantel permutation test on the matrix labels, yielding a permutation p-value. 
+%%%%%%% Jittered points show per-day ρ. Circles indicate median ρ across days, error bars are bootstrapped 95% CIs. 
+%%%%%%% Asterisks above each pair indicate combined significance across days using Fisher%s method on the per-day Mantel p-values. 
+%%%%%%% *** = p < 0.001, ** = p < 0.01, at α=0.05. 
+
 set(0,'defaultAxesFontSize', 24); % bc im blind
 set(0,'defaultAxesFontWeight', 'bold'); 
 
-dirs = {'Barney_210704', 'Barney_210706', 'Barney_210805','Thor_171005',...
-    'Thor_171010', 'Thor_171027', 'Thor_171128'};
-
-combined = summarize_rankorder_results_dirs(dirs, 'DayLabel','dir', ...
+combined = summarize_rankorder_results_dirs({''}, 'DayLabel','dir', ...
     'FilePattern','*rankSim*.mat', ...  % or '*.mat'
     'Recurse',false, ...
     'SaveCSV',true, ...
@@ -61,6 +73,13 @@ saveCSV     = p.Results.SaveCSV;
 csvPath     = string(p.Results.CSVPath);
 daySource   = lower(string(p.Results.DayLabel));
 
+% --- fast path: if CSV already exists, just load and return ---
+if exist(csvPath, 'file') == 2
+    combined = readtable(csvPath);
+    fprintf('Existing CSV found. Loaded: %s\n', csvPath);
+    return;
+end
+
 % required columns
 reqCols = {'Pair','Spearman_r','Spearman_p','Spearman_CI_low','Spearman_CI_high', ...
            'Kendall_tau','Kendall_p','Kendall_CI_low','Kendall_CI_high'};
@@ -73,8 +92,9 @@ allChunks = {};
 fprintf('Scanning %d directories...\n\n', numel(dirList));
 
 for d = 1:numel(dirList)
-    dpath = ['/Users/geena/Dropbox/PhD/SUAInfo/' dirList(d) '/CorrMatricesV2/'];
-    dpath = [dpath{:}];
+    % Build the expected folder path
+    dpath = fullfile('/Users/geena/Dropbox/PhD/SUAInfo', dirList(d), 'CorrMatricesV2');
+
     if ~isfolder(dpath)
         warning('Skipping: %s (not a folder)', dpath);
         continue;
@@ -93,7 +113,6 @@ for d = 1:numel(dirList)
 
     % pretty day label (folder name)
     [~, dayLabelFromDir] = fileparts(char(dpath));
-
     fprintf('=== %s ===\n', dayLabelFromDir);
 
     for k = 1:numel(S)
@@ -117,8 +136,8 @@ for d = 1:numel(dirList)
             continue;
         end
 
-        % pull out dayLabel 
-         dirLabel = string(dirList(d));  % e.g., 'Barney_210704'
+        % pick day label
+        dirLabel = string(dirList(d));  % e.g., 'Barney_210704'
         if daySource == "file"
             [~, baseName, ~] = fileparts(S(k).name);
             dayLabel = string(baseName);            % label by file basename
@@ -165,140 +184,11 @@ combined = movevars(combined, 'Day', 'Before', 1);
 
 % save CSV
 if saveCSV
-    if ~exist(csvPath)
-        fclose(fopen(csvPath, 'a'));  % "touch" the file: create if missing, then close
-    end
     writetable(combined, csvPath);
     fprintf('Combined table saved to: %s\n', csvPath);
 end
 end
 
-function plot_rankorder_summary(combined, varargin)
-% plot_rankorder_summary  Collapse across days and plot summary with CIs & significance.
-% Labels: R1='threat', R2='lipsmack', R3='chew'. Collapses over Day/File.
-
-p = inputParser;
-addParameter(p,'Metric','Spearman',@(s)ischar(s)||isstring(s));
-addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
-addParameter(p,'NBoot',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
-addParameter(p,'ShowPoints',true,@islogical);
-parse(p,varargin{:});
-metric = lower(string(p.Results.Metric));
-alpha  = p.Results.Alpha;
-NBoot  = p.Results.NBoot;
-showPts= p.Results.ShowPoints;
-
-switch metric
-    case "spearman"
-        effCol = 'Spearman_r'; pCol = 'Spearman_p';
-        ylab   = 'Rank-order similarity (Spearman \rho)';
-    case "kendall"
-        effCol = 'Kendall_tau'; pCol = 'Kendall_p';
-        ylab   = 'Rank-order similarity (Kendall \tau)';
-    otherwise
-        error('Metric must be ''Spearman'' or ''Kendall''.');
-end
-
-needCols = {'Pair',effCol,pCol};
-missing = setdiff(needCols, combined.Properties.VariableNames);
-if ~isempty(missing), error('Combined table missing: %s', strjoin(missing,', ')); end
-
-pairOrder   = {'R1-R2','R1-R3','R2-R3'};
-pairDisplay = {'threat–lipsmack','threat–chew','lipsmack–chew'};
-M = numel(pairOrder);
-
-mu    = nan(M,1);
-CI    = nan(2,M);
-pComb = nan(M,1);
-nPer  = nan(M,1);
-
-for i = 1:M
-    sel   = strcmp(combined.Pair, pairOrder{i});
-    vals  = combined.(effCol)(sel);
-    pvals = combined.(pCol)(sel);
-
-    vals  = vals(isfinite(vals));
-    pvals = pvals(isfinite(pvals));
-
-    nPer(i) = numel(vals);
-    if isempty(vals), continue; end
-
-    mu(i) = median(vals, 'omitnan');
-
-    if numel(vals)==1
-        CI(:,i) = [vals; vals];
-    else
-        bs = nan(NBoot,1);
-        for b = 1:NBoot
-            ii = randi(numel(vals), numel(vals), 1);
-            bs(b) = median(vals(ii), 'omitnan');
-        end
-        CI(:,i) = prctile(bs, [2.5 97.5])';
-    end
-
-    if ~isempty(pvals)
-        pvals = max(pvals, 1e-12); % floor to avoid -Inf
-        X = -2 * sum(log(pvals));
-        df = 2 * numel(pvals);
-        pComb(i) = 1 - chi2cdf(X, df);
-    end
-end
-
-figure('Color','w'); hold on;
-x = (1:M).';
-
-% (optional) per-day points
-if showPts
-    gcol = 0.7*[1 1 1];
-    for i = 1:M
-        sel  = strcmp(combined.Pair, pairOrder{i});
-        vals = combined.(effCol)(sel);
-        vals = vals(isfinite(vals));
-        if isempty(vals), continue; end
-        jitter = (rand(size(vals))-0.5)*0.15;
-        plot(i + jitter, vals, '.', 'Color', gcol, 'MarkerSize', 24);
-    end
-end
-
-% --- FIX: ensure column vectors for errorbar inputs ---
-mu_col   = mu(:);                % Mx1
-ci_low   = CI(1,:).';            % Mx1
-ci_high  = CI(2,:).';            % Mx1
-yneg     = mu_col - ci_low;      % Mx1
-ypos     = ci_high - mu_col;     % Mx1
-
-% Guard against negatives from NaNs/order issues (optional)
-% yneg(yneg<0) = NaN; ypos(ypos<0) = NaN;
-
-eh = errorbar(x, mu_col, yneg, ypos, 'o', 'LineWidth',3, 'CapSize',18, 'MarkerSize',24);
-
-% significance stars
-finiteCI = isfinite(ci_low) & isfinite(ci_high);
-rngY = diff([min(ci_low(finiteCI)), max(ci_high(finiteCI))]);
-if isempty(rngY) || ~isfinite(rngY) || rngY==0, rngY = 0.1; end
-for i = 1:M
-    if ~isfinite(pComb(i)), continue; end
-    if pComb(i) < 0.001, stars='***';
-    elseif pComb(i) < 0.01, stars='**';
-    elseif pComb(i) < alpha, stars='*';
-    else, stars='n.s.';
-    end
-    yTop = ci_high(i);
-    if ~isfinite(yTop), yTop = mu_col(i); end
-    text(x(i), yTop + 0.3*rngY, stars, 'HorizontalAlignment','center', 'FontSize', 16,'FontWeight','bold');
-end
-
-xlim([0.5 M+0.5]); ylim([-1 1])
-xticks(x); xticklabels(pairDisplay);
-ylabel(ylab);
-title(sprintf('Across-day summary (%s) — Median with bootstrap 95%% CI; p via Fisher''s method', char(metric)));
-grid on; box off;
-
-annotation('textbox',[0.13 0.01 0.8 0.05], 'String', ...
-    sprintf('Stars reflect combined Mantel p (Fisher). Points = per-day estimates (n per pair: %s).', ...
-    strjoin(arrayfun(@(n)sprintf('%d',nPer(i)), (1:M), 'UniformOutput',false), ', ')), ...
-    'EdgeColor','none','HorizontalAlignment','left','FontSize',14);
-end
 
 function plot_rankorder_by_region(combined, varargin)
 % plot_rankorder_by_region  Make one summary plot per cortical region.
@@ -472,6 +362,133 @@ for r = 1:numel(regionList)
     exportgraphics(plotFig, ['~/Desktop/' reg{1} '_rankOrder.pdf'], 'ContentType', 'vector');
 
 end % end regions 
+end
+
+function plot_rankorder_summary(combined, varargin)
+% plot_rankorder_summary  Collapse across days and plot summary with CIs & significance.
+% Labels: R1='threat', R2='lipsmack', R3='chew'. Collapses over Day/File.
+
+p = inputParser;
+addParameter(p,'Metric','Spearman',@(s)ischar(s)||isstring(s));
+addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
+addParameter(p,'NBoot',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
+addParameter(p,'ShowPoints',true,@islogical);
+parse(p,varargin{:});
+metric = lower(string(p.Results.Metric));
+alpha  = p.Results.Alpha;
+NBoot  = p.Results.NBoot;
+showPts= p.Results.ShowPoints;
+
+switch metric
+    case "spearman"
+        effCol = 'Spearman_r'; pCol = 'Spearman_p';
+        ylab   = 'Rank-order similarity (Spearman \rho)';
+    case "kendall"
+        effCol = 'Kendall_tau'; pCol = 'Kendall_p';
+        ylab   = 'Rank-order similarity (Kendall \tau)';
+    otherwise
+        error('Metric must be ''Spearman'' or ''Kendall''.');
+end
+
+needCols = {'Pair',effCol,pCol};
+missing = setdiff(needCols, combined.Properties.VariableNames);
+if ~isempty(missing), error('Combined table missing: %s', strjoin(missing,', ')); end
+
+pairOrder   = {'R1-R2','R1-R3','R2-R3'};
+pairDisplay = {'threat–lipsmack','threat–chew','lipsmack–chew'};
+M = numel(pairOrder);
+
+mu    = nan(M,1);
+CI    = nan(2,M);
+pComb = nan(M,1);
+nPer  = nan(M,1);
+
+for i = 1:M
+    sel   = strcmp(combined.Pair, pairOrder{i});
+    vals  = combined.(effCol)(sel);
+    pvals = combined.(pCol)(sel);
+
+    vals  = vals(isfinite(vals));
+    pvals = pvals(isfinite(pvals));
+
+    nPer(i) = numel(vals);
+    if isempty(vals), continue; end
+
+    mu(i) = median(vals, 'omitnan');
+
+    if numel(vals)==1
+        CI(:,i) = [vals; vals];
+    else
+        bs = nan(NBoot,1);
+        for b = 1:NBoot
+            ii = randi(numel(vals), numel(vals), 1);
+            bs(b) = median(vals(ii), 'omitnan');
+        end
+        CI(:,i) = prctile(bs, [2.5 97.5])';
+    end
+
+    if ~isempty(pvals)
+        pvals = max(pvals, 1e-12); % floor to avoid -Inf
+        X = -2 * sum(log(pvals));
+        df = 2 * numel(pvals);
+        pComb(i) = 1 - chi2cdf(X, df);
+    end
+end
+
+figure('Color','w'); hold on;
+x = (1:M).';
+
+% (optional) per-day points
+if showPts
+    gcol = 0.7*[1 1 1];
+    for i = 1:M
+        sel  = strcmp(combined.Pair, pairOrder{i});
+        vals = combined.(effCol)(sel);
+        vals = vals(isfinite(vals));
+        if isempty(vals), continue; end
+        jitter = (rand(size(vals))-0.5)*0.15;
+        plot(i + jitter, vals, '.', 'Color', gcol, 'MarkerSize', 24);
+    end
+end
+
+% --- FIX: ensure column vectors for errorbar inputs ---
+mu_col   = mu(:);                % Mx1
+ci_low   = CI(1,:).';            % Mx1
+ci_high  = CI(2,:).';            % Mx1
+yneg     = mu_col - ci_low;      % Mx1
+ypos     = ci_high - mu_col;     % Mx1
+
+% Guard against negatives from NaNs/order issues (optional)
+% yneg(yneg<0) = NaN; ypos(ypos<0) = NaN;
+
+eh = errorbar(x, mu_col, yneg, ypos, 'o', 'LineWidth',3, 'CapSize',18, 'MarkerSize',24);
+
+% significance stars
+finiteCI = isfinite(ci_low) & isfinite(ci_high);
+rngY = diff([min(ci_low(finiteCI)), max(ci_high(finiteCI))]);
+if isempty(rngY) || ~isfinite(rngY) || rngY==0, rngY = 0.1; end
+for i = 1:M
+    if ~isfinite(pComb(i)), continue; end
+    if pComb(i) < 0.001, stars='***';
+    elseif pComb(i) < 0.01, stars='**';
+    elseif pComb(i) < alpha, stars='*';
+    else, stars='n.s.';
+    end
+    yTop = ci_high(i);
+    if ~isfinite(yTop), yTop = mu_col(i); end
+    text(x(i), yTop + 0.3*rngY, stars, 'HorizontalAlignment','center', 'FontSize', 16,'FontWeight','bold');
+end
+
+xlim([0.5 M+0.5]); ylim([-1 1])
+xticks(x); xticklabels(pairDisplay);
+ylabel(ylab);
+title(sprintf('Across-day summary (%s) — Median with bootstrap 95%% CI; p via Fisher''s method', char(metric)));
+grid on; box off;
+
+annotation('textbox',[0.13 0.01 0.8 0.05], 'String', ...
+    sprintf('Stars reflect combined Mantel p (Fisher). Points = per-day estimates (n per pair: %s).', ...
+    strjoin(arrayfun(@(n)sprintf('%d',nPer(i)), (1:M), 'UniformOutput',false), ', ')), ...
+    'EdgeColor','none','HorizontalAlignment','left','FontSize',14);
 end
 
 % ---------- helper ----------
