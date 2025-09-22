@@ -7,14 +7,6 @@
 %%%
 %%% 0 indicates equal for all expressions, 1 indicates discharge for 1 exp
 %%%     only 
-%%% for building intuition -- for 3 expressions:
-%%%  neuron firing 3hz, 1hz, 1hz --> 0.67
-%%%  neuron firing 2hz, 1hz, 1hz --> 0.5
-%%%  neuron firing 2hz, 2hz, 1hz --> 0.25
-
-
-%%% reminder to run for files V2 (+/- 1 s for FEPI) vs no V2 (+/- 0.5 s for
-%%% FEPI) -- same results 
 
 close all;
 clear all;

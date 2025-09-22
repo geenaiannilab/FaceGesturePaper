@@ -1,13 +1,12 @@
-%%%%%%%
-%%%%%%% pooling data for Figure 3A
-%%%%%%%%  Single trials cluster by gesture-type in neural state space 
-%%%%%%%% PUPRPOSE: Pool spikes to calculate neural state space
-%%%%%%%%   where each point in reduced neural state-space represents a TRIAL 
-%%%%%%%%   of a particular BEHAVIOR TYPE
-%%%%%%%%
-%%%%%%%% Generates input to plotSingelTrialsNeuralStateSpace, which is allCellsSpikeCounts (nCells x nTrials) 
-%%%%%%%%    where each entry is # of spikes that occured on that trial
-%%%%%%%% written GI 252209
+% written GI 
+%
+% PUPRPOSE: Pool spikes to calculate neural state space
+%   where each point in reduced neural state-space represents a TRIAL 
+%   of a particular BEHAVIOR TYPE
+%   
+% Generates input to PlotSingelTrialsNeuralStateSpace, which is allCellsSpikeCounts (nCells x nTrials) 
+%    where each entry is # of spikes that occured on that trial
+%
 
 clear all;
 
@@ -16,7 +15,7 @@ subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 
 
-chls = 1:240;
+chls = 193:240;
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 win = 0.02; % in sec
@@ -179,7 +178,7 @@ end
 
 % save results 
 if saveFlag 
-    save('Fig3A_Supp_All.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
+    save('Fig3A_Supp_M3.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
 end
 
 

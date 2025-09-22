@@ -1,13 +1,18 @@
-%%%%%%%
-%%%%%%% pooling data for Figure 3A
-%%%%%%%%  Single trials cluster by gesture-type in neural state space 
-%%%%%%%% PUPRPOSE: Pool spikes to calculate neural state space
-%%%%%%%%   where each point in reduced neural state-space represents a TRIAL 
-%%%%%%%%   of a particular BEHAVIOR TYPE
-%%%%%%%%
-%%%%%%%% Generates input to plotSingelTrialsNeuralStateSpace, which is allCellsSpikeCounts (nCells x nTrials) 
-%%%%%%%%    where each entry is # of spikes that occured on that trial
-%%%%%%%% written GI 252209
+% written GI 
+%%%     2021 NEEDS UPDATED HEADER COMMENTS !
+%
+% PUPRPOSE: Calculate & plot reduced neural "state space"
+%   where each point in reduced neural state-space represents a TRIAL 
+%   of a particular BEHAVIOR TYPE
+%   
+% Input to PCA is allCellsSpikeCounts, which is nCells x nTrials, 
+%    where each entry is # of spikes that occured on that trial
+%
+% This script will calculate the 1) loadings of each neuron onto each PC 
+%                                2) the projections of the data onto the
+%                                PCs
+%                                3) variance explained by each PC 
+
 
 clear all;
 
@@ -177,12 +182,122 @@ for unit = 1:length(spikeLabels2plot)
 end
 
 
+
 % save results 
 if saveFlag 
-    save('Fig3A_Supp_All.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
+    save('Fig3A.mat','coeff','score','latent','spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot',"ax");
 end
 
+% spikeCounts per cell per Trial (input to PCA)
+markerSize = 36;
+% figure; imagesc(allCellsPerTrialSpikeCount'); colormap(jet); ylabel('cell'); xlabel('trial#'); 
+% colorbar;
+% xticks(1:length(allTrials.trialType));
+% xticklabels(allTrials.trialType);
+% yticks(1:size(allCellsPerTrialSpikeCount,2));
+% yticklabels(spikeLabels);
+% title('spikes PER trial, per Cell ')
+% 
+% 
+% figure; imagesc(neuralInput'); colormap(jet); ylabel('cell'); xlabel('trial#'); 
+% colorbar;
+% xticks(1:length(allTrials.trialType));
+% xticklabels(allTrials.trialType);
+% yticks(1:size(allCellsPerTrialSpikeCount,2));
+% yticklabels(spikeLabels);
+% title('spikes PER trial per cell, PREPROC INPUT ')
+% 
+% % % plot FR vs loadings to see if highFR neurons determine own PCs
+% figure;
+% subplot(1,2,1); plot(bin.meanFRs(bin.meanFRs >= threshlowFR), coeff(:,1), 'o'); grid; xlabel('meanFR'); ylabel('loadings on PC1')
+% [rho1, pval1] = corr(bin.meanFRs(bin.meanFRs >= threshlowFR)', coeff(:,1));
+% subplot(1,2,2); plot(bin.meanFRs(bin.meanFRs >= threshlowFR), coeff(:,2), 'o'); grid; xlabel('meanFR'); ylabel('loadings on PC2')
+% [rho2, pval2] = corr(bin.meanFRs(bin.meanFRs >= threshlowFR)', coeff(:,2));
+% sgtitle('Mean FRs vs. loadings on PC1, PC2')
+% 
 
+% loadings of each neuron on each PC
+ figure; imagesc(coeff(:,1:5));  colorbar; colormap(bluewhitered)
+ ax = gca; 
+ ax.FontSize = 10;
+ yticks(1:size(allCellsPerTrialSpikeCount,2));
+ yticklabels(spikeLabels);
+ xticks(1:5)
+ xlabel('PC','FontSize',18); ylabel('Cell ID','FontSize',18);
+ title('PC Loadings are Distributed Across Cells','FontSize',22)
+
+
+% eigenvalues 
+figure; 
+plot(cumsum(latent/sum(latent)), 'ok','MarkerFaceColor','k') 
+xlabel('PC'); ylabel('% variance'); xlim([0 80]);
+title('Cumulative Variance Explained');
+
+% perTrial data projected onto first 3 PCs 
+%%
+[~,~,id] = unique(allTrials.trialType);
+colors = 'rbgck';
+markers = 'osd*.';
+plotFig = figure;
+for idx = 1:length(unique(allTrials.trialType))'
+    data = score(allTrials.trialType == bhvs2plot(idx),:);
+    scat(idx) = scatter3(data(:,1), -data(:,2), data(:,3), 500, [colors(idx) markers(idx)], 'filled',...
+        'MarkerFaceAlpha', 0.5,'MarkerEdgeColor',colors(idx),'linew',2);
+    hold on;
+end
+xlabel('PC1')
+ylabel('PC2')
+zlabel('PC3')
+title(['Single Trials of Facial Gesture ']); 
+legend('Threat','Lipsmack','Chew')
+%%
+% perTrial data projected onto 2PCs, labeled by bhvType 
+% figure; 
+% subplot(1,3,1); 
+% gscatter(score(:,1),score(:,2),allTrials.trialType, colors(bhvs2plot), markers(bhvs2plot)); xlabel('PC1'); ylabel('PC2'); legend
+% subplot(1,3,2);
+% gscatter(score(:,2),score(:,3),allTrials.trialType, colors(bhvs2plot), markers(bhvs2plot)); xlabel('PC2'); ylabel('PC3'); legend
+% subplot(1,3,3)
+% gscatter(score(:,1),score(:,3),allTrials.trialType, colors(bhvs2plot), markers(bhvs2plot)); xlabel('PC1'); ylabel('PC3'); legend
+
+% figure; 
+% colorMap = [1,0,0;0,0,1;1,1,0;0,1,0;1,0,1];
+% for PC = 1:3
+%      PrincipleAxis = score(:,PC); 
+%      subplot(1,3,PC); 
+%      b(PC) = bar(PrincipleAxis);
+%      b(PC).FaceColor = 'flat';
+%      
+%     for ii = 1:length(b(PC).CData)
+%         b(PC).CData(ii,:) = colorMap(allTrials.trialType(ii),:); 
+%     end
+%     xlabel('trial#')
+%     ylabel('weight on PC, a.u.')
+%    
+% end
+% c = colorbar;
+% c.Ticks = 0:length(bhvs2plot)-1;
+% c.TickLabels = bhvs2plot;
+% colormap(colorMap)
+% sgtitle('Princple Components 1-3')
+% sgtitle('Princple Components 1-3')
+% 
+
+% % biplots in 2D & 3D 
+% 
+% figure; h1 = biplot(coeff(:,1:3), 'scores', score(:,1:3), 'Color', 'b','varlabels', spikeLabels);
+% title(['biplot PC1-3; bhvtype: ' num2str(bhvs2plot)]); 
+% 
+% figure; h2 =  biplot(coeff(:,1:2), 'scores', score(:,1:2), 'Color', 'b','varlabels', spikeLabels);
+% title(['biplot PC1v2; bhvtype: ' num2str(bhvs2plot)]); 
+% 
+% figure; h3 = biplot(coeff(:,[1,3]), 'scores', score(:,[1,3]), 'Color', 'b','varlabels', spikeLabels);
+% title(['biplot PC1v3; bhvtype: ' num2str(bhvs2plot)]); 
+% 
+% % labeling neurons by array & trials by bhvType
+% %colorBiplotVectorsByArray(allCellsPerTrialSpikeCount', spikeLabels2plot, h1, h2, h3);
+% %colorObservationsOnBiplot(allCellsPerTrialSpikeCount', allTrials.trialType, h1, h2, h3)
+% 
 
 function binnedSpikes = binSpikes(evtime, sptimes, win, tmin, tmax)
 %%%%%%%%%
