@@ -1,9 +1,11 @@
 
 %%%%%%%%
-%%%%%%%% PLOTTING Figure 2D, LEFT 
+%%%%%%%% PLOTTING Figure 2D 
 %%%%%%%%  Single-Cell Activity and Selectivity in Cortical Face-Motor Regions
 %%%%%%%%
 %%%%%%%% GPI index by region with overlying statistics (no effect of cortical region on GPI)  
+%%%%%%%% GPI index by region, only for selective cells (GPI > 0.5) 
+%%%%%%%%
 %%%%%%%%% GRI 09/11/2025 
 
 clear all
@@ -12,6 +14,7 @@ set(0,'defaultAxesFontSize',20)
 %% Control options
 regions = {'S1','M1','PMv','M3'};
 subjects = {'barney','thor'};
+GPIthreshold = 0.5;
 
 %% Load matfiles
 pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/MatFiles/GPIvalues.mat';
@@ -61,6 +64,15 @@ inputCortRegion = [cortRegionOut ; cortRegionOut; cortRegionOut];
 
 disp('Effect of cortical region, gesture type, on firing rates (2 way ANOVA):')
 print_anova_APA(TABLE_twoway);
+
+%% just the "selective" cells (GPI > 0.5) 
+selectiveGPI = GPIout >= GPIthreshold;
+meanFRs = meanFRsOut(selectiveGPI,:);
+
+xRegions = categorical(cortRegionOut(selectiveGPI));
+xRegions = reordercats(xRegions,{'S1' 'M1' 'PMv','M3'});
+yGPIvalues = GPIout(selectiveGPI);
+[cExpWinnerFR, cExpWinner] = max(meanFRs,[],2);
 
 %% plot GPI by region, 
 cmap1 = [         
@@ -161,7 +173,20 @@ ylim([0 1.1]);
 ylabel('Preference Index');
 title('Gesture Preference Indices per Regions')
 
-
+%% selective cells 
+figure;
+swarmchart(xRegions,yGPIvalues, 200, cExpWinner,'filled','MarkerFaceAlpha',0.75,'MarkerEdgeAlpha',0.5);
+expColorMap = [1 0 0
+    0 1 0
+    0 0 1]; % r,b,g
+colormap(expColorMap)
+yticks(0.5:0.1:1)
+ylim([.45 1.05])
+ylabel('Preference Index')
+xlabel('Region')
+title('Preference Indices of Selective Cells')
+axes = gca;
+axes.FontWeight = 'bold';
 
 %% === APA-style reporting for two-way ANOVA + Tukey post-hoc ===
 
