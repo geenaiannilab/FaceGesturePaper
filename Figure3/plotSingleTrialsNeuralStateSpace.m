@@ -8,6 +8,7 @@
 %                                2) the projections of the data onto the
 %                                PCs
 %                                3) variance explained by each PC 
+% written GRI 250911
 
 clear all ; 
 data = load('/MatFiles/Fig3A.mat');

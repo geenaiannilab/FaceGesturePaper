@@ -271,18 +271,3 @@ legend('Thr-LS','Thr-Ch','LS-Ch','Avg')
 
 
 
-% Benjamini-Hochberg adjusted p-values (vector). Threshold with < alpha.
-if nargin < 2, alpha = 0.05; end
-m = numel(p);
-[ps, idx] = sort(p(:));
-adj = nan(m,1);
-% Monotone BH adjustment
-minv = 1;
-for i = m:-1:1
-    val = ps(i) * m / i;
-    minv = min(minv, val);
-    adj(i) = minv;
-end
-p_fdr = nan(size(p));
-p_fdr(idx) = min(adj, 1);
-end

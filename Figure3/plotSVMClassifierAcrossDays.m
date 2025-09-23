@@ -1,3 +1,19 @@
+%%%%%%%%
+%%%%%%%% PLOTTING Figure 3B, S2B
+%%%%%%%%  Decoding gesture type from neural population activity
+%%%%%%%%
+%%%%%%%% Categorical facial gesture decoded from region-specific population spiking activity on a trial-by-trial basis
+%%%%%%%% Mean decoding accuracies ± 2 SEMs , across pseudopopulations (N=50 iterations, 50 cells per iteration, drawn from entire database)
+%%%%%%%% from -1000 ms to +1000 ms (400 ms bins in 50 ms steps)
+%%%%%%%% Grey curve indicates significance threshold based on 98th percentile of one hundred permuted decoding accuracies 
+%%%%%%%%  Significance determined at each time point, w/ right-tailed one-sample t-test, cluster-based permutation framework 
+%%%%%%%%
+%%%%%%%%  Will also plot decoding accuracies, compared pairwise by region
+%%%%%%%%  Black bars indicate significant difference in accuracy; two-sample Welch s t-test, cluster-based permutation correction for multiple comparisons
+%%%%%%%%
+
+%%%%%%%%% GRI 09/11/2025 
+
 clear all; close all; 
 set(0,'defaultAxesFontSize',20)
 
@@ -6,23 +22,16 @@ subject = 'combined';
 nIterations = 50;
 windowLength = 0.4;
 windowShiftSize = 0.05;
-errorType = 1; % 1 = SEM across iter, 2 = mean SEM across iters, 3 = std across all iters 
+colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
+%% load data 
+data = load('MatFiles/Fig3B.mat');
+results = data.results;
 %% -------- Cluster-based permutation parameters --------
 alpha_cf = 0.01;     % cluster-forming p-threshold (per-time)
 nPerm    = 10000;     % number of permutations for max cluster mass null
 useDirectionalBetweenShading = false;  % true: shade by winner color; false: blended color
-
-
-%% load data 
-workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/Pseudopopulations/balanced/N_50cells/SVM_' subject '/'];
-
-colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
-
-for iter = 1:nIterations 
-    results(iter) = load([workdir '/' subject '_N' num2str(iter) '_SVMresults_' num2str(windowLength) '_' num2str(windowShiftSize) '.mat']);
-    perm(iter) = load([workdir '/' subject '_N' num2str(iter) '_permSVMresults_' num2str(windowLength) '_' num2str(windowShiftSize) '.mat']);
-end
+errorType = 1; % 1 = SEM across iter, 2 = mean SEM across iters, 3 = std across all iters 
 
 %% define time axis 
 firstWindowCenter = results(1).desiredStart + results(1).windowLength/2;
@@ -32,7 +41,7 @@ windowsCenter = firstWindowCenter:results(1).windowShiftSize:lastWindowCenter;
 arrayList = fieldnames(results(1).validationScoreStruct);
 validationScores = [results(:).validationScoreStruct];
 SEMScores = [results(:).SEM];
-permScores = [perm(:).permValidationScoreStruct];
+permScores = [data.perm(:).permValidationScoreStruct];
 
 %% get averages across N pseudopopulations and define errorBars
 for aa = 1:length(arrayList)
@@ -85,8 +94,8 @@ for aa = 1:length(arrayList)
 end
 
 
-%% original plot 
-figure;
+%% plot decoding accuracy by region over time 
+fig = figure; fig.Position =[476 92 1037 774];
 
 for aa = 1:length(arrayList)
   
@@ -110,7 +119,6 @@ ylim([50 103])
 title(['Decoding Performance By Region'],'FontSize',45);
 
 
-%% 
 %% Collect iteration matrices per region (real) and per-iteration null means
 nTime = numel(windowsCenter);
 nReg  = numel(arrayList);
@@ -123,8 +131,9 @@ for r = 1:nReg
     A = zeros(nIterations, nTime);
     B = zeros(nIterations, nTime);
     for iter = 1:nIterations
-        % Real: 1 x nTime row
+        
         A(iter,:) = validationScores(iter).(arrayList{r})(:).';
+        
         % Null: nTime x nPerms -> mean over perms (per-iteration null expectation)
         P = permScores(iter).(arrayList{r});   % nTime x nPerms
         B(iter,:) = mean(P, 2, 'omitnan').';
@@ -538,6 +547,7 @@ function plot_regions_vs_null_grid(tCenters, realAcc, nullMean, within, arrayLis
 nReg = numel(arrayList);
 [rows, cols] = bestSubplotGrid(nReg);
 fig = figure('Color','w','Name','Regions vs Null (cluster-corrected)');
+fig.Position =[476 92 1037 774];
 
 for r = 1:nReg
     ax = subplot(rows, cols, r, 'Parent', fig); hold(ax,'on');
@@ -572,6 +582,7 @@ function plot_between_regions_grid(tCenters, realAcc, between, pairs, arrayList,
 nPairs = size(pairs,1);
 [rows, cols] = bestSubplotGrid(nPairs);
 fig = figure('Color','w','Name','Between-Region Contrasts (cluster-corrected)');
+fig = figure; fig.Position =[476 92 1037 774];
 
 % ---------- compute global y-lims across all pairs ----------
 yMin =  inf; 
