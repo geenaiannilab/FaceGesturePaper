@@ -1,4 +1,21 @@
-%% 
+
+%%%%%% PLOTTING FIGURE 5 (left and middle panels) 
+%%%%%% Full cross-temporal generalization (CTG) matrices (one per region)
+%%%%%%  Each is the average CTG (over fifty iterations) 
+%%%%%%  Each column is a timebin at which the linear classifer was trained,
+%%%%%%  Each row is a timebin at which that linear classifier was tested
+%%%%%%  Cool colors represent below chance decoding, (defined as 98th
+%%%%%%  percentile of one hundred permuted decoding accuracies), hot colors
+%%%%%%  indicate above chance decoding accuracy 
+%%%%%%  dashed white line is movement onset
+%%%%%%
+%%%%%% Subplots that appear to the left of each CTG
+%%%%%%  represent a horizontal slice through the decoding matrix:
+%%%%%% Accuracy for a given training time, is plotted for all test-bins
+%%%%%% (mean +/- 2 SEMs across iterations) 
+%%%%%% 
+%%%%%% written GRI 250923
+
 close all; clear all ;
 set(0,'defaultAxesFontSize',24)
 set(0,'defaultAxesFontWeight','bold')
@@ -6,39 +23,29 @@ set(0,'defaultAxesFontWeight','bold')
 
 %% intial set-up
 subject = 'combined';
-popType = 'balanced/N_50cells';
-nIterations = 50;
+nIterations = 50; nUnitsPerRegion = 50;
 plotIndividualIterations = false; 
 binSize = 0.4;
-overlap = 'smallerOverlap';
-nUnitsPerRegion = 50;
-
-workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/CTD_' subject '/' overlap];
-%workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/CTD_' subject '/' overlap];
 
 %% load data 
-f2load = dir([workdir '/CTD_start1_bin' num2str(binSize) '*']);
+f2load = dir(['MatFiles/CTD*']);
 ctdat = load([f2load.folder '/' f2load.name]);
 
 %% channels
 arrayList = ctdat.arrayList;
 
 %% Create timebase
+windowsCenter = ctdat.windowsCenter; 
 
-windowsCenter = ctdat.windowsCenter; %firstWindowCenter:windowShiftSize:lastWindowCenter;
-time2test = -0.8:0.4:0.8; %windowsCenter(1:4:end); 
-if strcmp(overlap, 'smallerOverlap')
-    skipFactor = 10;
-else
-    skipFactor = 2;
-end
+%% For plotting horizontal slices thru CTD matrix 
+time2test = -0.8:0.4:0.8; 
+skipFactor = 10;
 
 %% Plot
 for aa = 1:length(arrayList)
 
     data = mean(ctdat.validationScoreStruct.(arrayList{aa}),3);
     sem = std(ctdat.validationScoreStruct.(arrayList{aa}),[],3) ./ sqrt(nIterations);
-    %sem = mean(ctdat.SEM.(arrayList{aa}),3);
     cmax = max(sem,[],'all');
 
     diagData = diag(data);
@@ -59,7 +66,7 @@ for aa = 1:length(arrayList)
     yticks(1:skipFactor:(length(windowsCenter)))
     yticklabels(windowsCenter(xticks))
     
-    colorbar; colorbarpzn(0.5,1,'full',0.6); %colormap(jet); caxis([0.5 1]);%
+    cb = colorbar; cb.Label.String = 'Accuracy'; colorbarpzn(0.5,1,'full',0.6); 
     set ( gca, 'FontSize', 24);
     title([arrayList{aa} ' - Generalization Across Time'], 'FontSize',28)
     %saveas(plotFig, ['/Users/geena/Dropbox/PhD/Manuscript/figures/' arrayList{aa} '_CTD_' subject '_' popType '.fig']);
@@ -111,8 +118,10 @@ for aa = 1:length(arrayList)
     
 end
 
-%close all; 
 
+%% =======================================
+%%  plot individual iterations for interest 
+%% =======================================
 if plotIndividualIterations
     arrayList = {'PMv'};
     for i = 1:50
@@ -129,7 +138,7 @@ if plotIndividualIterations
         xticklabels(windowsCenter(xticks))
         yticks(1:2:(length(windowsCenter)))
         yticklabels(windowsCenter(xticks))
-        colorbar; caxis([0.55 1]); colormap(jet);
+        cb = colorbar; cb.Label.String = 'Accuracy'; caxis([0.55 1]); colormap(jet);
         title('Mean CTD')
 
         title([subject ' - ' arrayList{1} 'N: ' num2str(i)],'FontSize',20)
@@ -139,7 +148,7 @@ if plotIndividualIterations
     end
 end
 
-%%%%
+%%%% helpers 
 function [results, sp2keep] = removeNanChannels(arrayList, results)
 
 for aa = 1:length(arrayList)

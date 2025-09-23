@@ -16,7 +16,7 @@ nIterations = 50;
 popType = 'balanced';
 saveResultsFlag = false; 
 plotResultsFlag = true; 
-workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/Pseudopopulations/' popType '/N_100cells/']);
+workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/Pseudopopulations/' popType '/N_50cells/']);
 
 % DO NOT CHANGE!
 win = 0.02; % in sec

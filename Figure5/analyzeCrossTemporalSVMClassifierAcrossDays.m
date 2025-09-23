@@ -13,8 +13,6 @@ nUnitsPerRegion = 50;
 
 workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/N_' num2str(nUnitsPerRegion) 'cells/'];
 outdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/N_' num2str(nUnitsPerRegion) 'cells/'];
-%workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/'];
-%outdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/'];
 
 saveResults = true; 
 saveFigsFlag = true; 

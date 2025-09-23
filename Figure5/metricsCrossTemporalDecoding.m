@@ -1,59 +1,45 @@
 
-%% written GI 250831
+%%%% PLOTTING Fig S6 (also will plot Fig 5, left and middle panels) 
+%%%% Generates summary metrics regarding stability/dynamnicity of codes 
+%%%%
+%%%% DI = Fraction of decoding "mass" on/near the diagonal vs off-diagonal.
+%%%% Dynamic ⇢ high DI (narrow diagonal ribbon). Stable ⇢ lower DI (broad off-diagonal generalization).
+%%%%
+%%%% Temporal generalization width (TGW): For each train time, find the full-width at half-max (FWHM) of accuracy across test times; 
+%%%% report the median width. Dynamic ⇢ narrow TGW.
 
-% generate summary metrics regarding stability/dynamnicity of codes 
-% DI = Fraction of decoding "mass" on/near the diagonal vs off-diagonal.
-% Dynamic ⇢ high DI (narrow diagonal ribbon). Stable ⇢ lower DI (broad off-diagonal generalization).
-
-% Temporal generalization width (TGW)
-% For each train time, find the full-width at half-max (FWHM) of accuracy across test times; 
-% % report the median width. Dynamic ⇢ narrow TGW.
-
-% Generalization half-life (G½)
-% Average over train times the lag delta where accuracy first drops to 50% of its peak:
+% written GI 250831
 
 close all; clear all ;
 set(0,'defaultAxesFontSize',24)
 set(0,'defaultAxesFontWeight','bold')
 
-
 %% intial set-up
 subject = 'combined';
-popType = 'balanced/N_50cells';
-nIterations = 50;
+nIterations = 50; nUnitsPerRegion = 50;
 plotIndividualIterations = false; 
 binSize = 0.4;
-overlap = 'smallerOverlap';
-nUnitsPerRegion = 50;
-
-workdir = ['/Users/geena/Dropbox/PhD/SUAinfo/PseudoPopulations/' popType '/CTD_' subject '/' overlap];
-
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
 %% load data 
-f2load = dir([workdir '/CTD_start1_bin' num2str(binSize) '*']);
+f2load = dir('MatFiles/CTD*');
 ctdat = load([f2load.folder '/' f2load.name]);
 
-%% channels
+%% Create timebase, channels 
 arrayList = ctdat.arrayList;
-
-%% Create timebase
-
 windowsCenter = ctdat.windowsCenter; 
 time2test = -0.8:0.4:0.8; 
-if strcmp(overlap, 'smallerOverlap')
-    skipFactor = 10;
-else
-    skipFactor = 2;
-end
+skipFactor = 10;
 
-%% calculate metrics 
 
-chance = 0.6;                 % set to your tasks chance level
+%% ===============================
+%% calculate metrics : DI and TGW
+%% ===============================
 
+chance = 0.6;
 band   = 10;                  % half-width (in bins) of the diagonal strip you count as "on/near the diagonal3 when computing DI;                               % pick band roughly matching your temporal resolution or expected generalization (e.g., 1–2 bins for sharp, dynamic codes
                               % larger band → more matrix “mass” counted as diagonal ⇒ higher DI; smaller band makes the metric stricter (more “dynamic” if mass is tightly on the diagonal).
- 
+                   
 out = summarize_ctd_dynamics(ctdat, arrayList, ...
      'chance',chance, 'band',band, 'tAxis',windowsCenter,'Colors',colorArray);
 

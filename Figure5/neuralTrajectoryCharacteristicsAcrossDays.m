@@ -1,25 +1,28 @@
-% written GI updated 220104
-%
-% PUPRPOSE: Calculate reduced neural "state space"
-%   where each point in reduced neural state-space represents a BIN in TIME
-
-% velocity dimensions are timepoint x cumulative dimensionality x iteration
+%%%%%%% PLOTTING FIGURE 5 (right panels) 
+%%%%%%% Face gesture neural trajectory velocities differ across regions 
+%%%%%%  Velocity (rate of change) of facial gesture trajectories in the neural space defined by the top 12 principle components of neural activity in each region.
+%%%%%%% The velocity for each gesture is plotted, as is the all-gesture average (in dashed black line). 
+%%%%%%%
+%%%%%%% Population trajectory velocity was obtained by 
+%%%%%%% 1) obtaining the neural trajectories for each facial gesture in
+%%%%%%% each region (as in Figure 5B), averaged over iterations (N=50)
+%%%%%%% 2) calculating the distance between two successive time bins in N-dimensional neural space 
+%%%%%%  3) to test additional dimensions, edit 'dims2test' below
+%%%%%%%
+%%%%%%% This will also plot the average inter-gesture trajectory distances
+ 
 
 clear all;
 set(0,'defaultAxesFontSize',24)
 set(0,'defaultAxesFontWeight','bold')
 
-subject2analyze ={'combined'};
-popType = 'unbalanced';
-saveFlag = false; 
-workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/Pseudopopulations/' popType '/']);
+%% load data
+data = load(['Matfiles/neuralTrajectory_combined.mat']);
+
+%% extract parameters
 bhvs = {'Thr','LS','Chew'};
-dim2test = [12];
+dims2test = [6 12 20];
 
-% load data
-data = load([workdir 'neuralTrajectory_' subject2analyze{:} '.mat']);
-
-% extract parameters
 nIterations = data.nIterations;
 arrayList = fieldnames(data.velChewTotal);
 win = data.win;
@@ -29,7 +32,7 @@ taxis = -tmin:win:tmax;
 
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
-%%%%%%%%%%%%%%%%%%
+%% calculate distance between gesture-trajectories, also global average
 for ss = 1:length(subject2analyze)
 
     thisSubj = subject2analyze{ss};
@@ -57,6 +60,9 @@ for ss = 1:length(subject2analyze)
         %allBhvVelocity(arrayList{aa}).mean = mean(thrVelocity.(arrayList{aa}).mean, lsVelocity.(arrayList{aa}).mean, chewVelocity.(arrayList{aa}).mean );
     end
 
+    %% plot distance between gesture-trajectories, also global average, using all dimensions
+    %% plot velocity of gesture-trajectories, also global average, using all dimensions
+
     fig1 = figure('Position', [476    83   975   783]);
     for aa = 1:length(arrayList)
         subplot(2,2,aa)
@@ -70,27 +76,9 @@ for ss = 1:length(subject2analyze)
         title([arrayList{aa}])
     end
     sgtitle('Neural Trajectory Velocities, All Dimensions','FontSize',28,'FontWeight','bold');
-    if saveFlag
-        saveas(fig1, '/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_byExp_allDims.fig');
-        saveas(fig1, '/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_byExp_allDims.png');
-    end
+ 
 
-    fig2 = figure('Position', [476    83   975   783]);
-    for aa = length(arrayList):-1:1
-        avgSEM = mean([thrVelocity.(arrayList{aa}).sem(:,end), lsVelocity.(arrayList{aa}).sem(:,end), chewVelocity.(arrayList{aa}).sem(:,end)],2);
-        avgTraj2 = mean([thrVelocity.(arrayList{aa}).mean(:,end), lsVelocity.(arrayList{aa}).mean(:,end), chewVelocity.(arrayList{aa}).mean(:,end)],2);
-        errorbar(taxis(1:end-1), avgTraj2,avgSEM, 'Color',colorArray(aa,:),'linew',5); hold on 
-        ylabel('Speed, au'); xlabel('Time, s'); ylim([0 2]); xlim([-0.8 0.8]); %axes = gca; axes.YTick= [0    0.2000    0.4000    0.6000    0.8000    1.0000];
-        l = legend('M3','PMv','M1','S1');
-    end
-    hold off
-    sgtitle('Neural Trajectory Velocities, All Dimensions','FontSize',28,'FontWeight','bold');
-    if saveFlag
-        saveas(fig2, '/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_Avg_allDims.fig');
-        saveas(fig2, '/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_Avg_allDims.png');
-    end
-%%
-    figure; 
+    fig3 = figure('Position', [476    83   975   783]);
     for aa = 1:length(arrayList)
         avgDistance = mean([distanceThrVLS.(arrayList{aa}).mean(:,end) distanceThrVCh.(arrayList{aa}).mean(:,end) distanceLSVCh.(arrayList{aa}).mean(:,end)],2);
         subplot(2,2,aa)
@@ -104,7 +92,7 @@ for ss = 1:length(subject2analyze)
     end
     sgtitle([subject2analyze{:} ' All Neural Distances'],'FontSize',20);
 
-    figure;
+    fig4 = figure('Position', [476    83   975   783]);
     for aa = 1:length(arrayList)
         avgDistance = mean([distanceThrVLS.(arrayList{aa}).mean(:,end) distanceThrVCh.(arrayList{aa}).mean(:,end) distanceLSVCh.(arrayList{aa}).mean(:,end)],2);
         avgSEM = sum([distanceThrVLS.(arrayList{aa}).sem(:,end) distanceThrVCh.(arrayList{aa}).sem(:,end) distanceLSVCh.(arrayList{aa}).sem(:,end)],2);
@@ -116,11 +104,10 @@ for ss = 1:length(subject2analyze)
     sgtitle(['Average Intra-Trajectory Distances; All Dimensions'],'FontSize',28);
 
 
-    %%
-    dim2test = [6 8 12 20];
-    for dd = 1:length(dim2test)
+    %% repeat for a number of different dimensions
+    for dd = 1:length(dims2test)
 
-        figure;
+    fig5 = figure('Position', [476    83   975   783]);
         for aa = 1:length(arrayList)
             avgDistance = mean([distanceThrVLS.(arrayList{aa}).mean(:,dd) distanceThrVCh.(arrayList{aa}).mean(:,dd) distanceLSVCh.(arrayList{aa}).mean(:,dd)],2);
             avgSEM = sum([distanceThrVLS.(arrayList{aa}).sem(:,dd) distanceThrVCh.(arrayList{aa}).sem(:,dd) distanceLSVCh.(arrayList{aa}).sem(:,dd)],2);
@@ -129,80 +116,50 @@ for ss = 1:length(subject2analyze)
             
             legend('S1','M1','PMv','M3');
         end
-       sgtitle(['Average Intra-Trajectory Distances; Dims = ' num2str(dim2test(dd)) ],'FontSize',28);
+       sgtitle(['Average Intra-Trajectory Distances; Dims = ' num2str(dims2test(dd)) ],'FontSize',28);
 
-        figure;
-        for aa = 1:length(arrayList)
-            avgDistance = mean([distanceThrVLS.(arrayList{aa}).mean(:,dd) distanceThrVCh.(arrayList{aa}).mean(:,dd) distanceLSVCh.(arrayList{aa}).mean(:,dd)],2);
-            subplot(2,2,aa)
+       fig6 = figure('Position', [476    83   975   783]);
+       for aa = 1:length(arrayList)
+           avgDistance = mean([distanceThrVLS.(arrayList{aa}).mean(:,dd) distanceThrVCh.(arrayList{aa}).mean(:,dd) distanceLSVCh.(arrayList{aa}).mean(:,dd)],2);
+           subplot(2,2,aa)
             errorbar(taxis, distanceThrVLS.(arrayList{aa}).mean(:,dd), distanceThrVLS.(arrayList{aa}).sem(:,dd) ,'Color',[0.3010 0.7450 0.9330],'linew',2); hold on
             errorbar(taxis, distanceThrVCh.(arrayList{aa}).mean(:,dd), distanceThrVCh.(arrayList{aa}).sem(:,dd) ,'Color',[0.4660 0.6740 0.1880],'linew',2);
             errorbar(taxis, distanceLSVCh.(arrayList{aa}).mean(:,dd), distanceLSVCh.(arrayList{aa}).sem(:,dd) ,'Color',[0.6350 0.0780 0.1840]	,'linew',2); 
             plot(taxis, avgDistance,'k','linew',2); hold off
             ylim([0 25]); ylabel('Distance, au'); xlabel('Time, s')
-            title([arrayList{aa} '; Dims = ' num2str(dim2test(dd))])
+            title([arrayList{aa} '; Dims = ' num2str(dims2test(dd))])
             legend('Thr-LS','Thr-Ch','LS-Ch');
         end
         sgtitle([subject2analyze{:} ' All Neural Distances'],'FontSize',20);
 
-        fig3 = figure('Position', [476    83   975   783]);
+        fig7 = figure('Position', [476    83   975   783]);
         for aa = length(arrayList):-1:1
-            avgSEM = mean([thrVelocity.(arrayList{aa}).sem(:,dim2test(dd)), lsVelocity.(arrayList{aa}).sem(:,dim2test(dd)), chewVelocity.(arrayList{aa}).sem(:,dim2test(dd))],2);
-            avgTraj2 = mean([thrVelocity.(arrayList{aa}).mean(:,dim2test(dd)), lsVelocity.(arrayList{aa}).mean(:,dim2test(dd)), chewVelocity.(arrayList{aa}).mean(:,dim2test(dd))],2);
+            avgSEM = mean([thrVelocity.(arrayList{aa}).sem(:,dims2test(dd)), lsVelocity.(arrayList{aa}).sem(:,dims2test(dd)), chewVelocity.(arrayList{aa}).sem(:,dims2test(dd))],2);
+            avgTraj2 = mean([thrVelocity.(arrayList{aa}).mean(:,dims2test(dd)), lsVelocity.(arrayList{aa}).mean(:,dims2test(dd)), chewVelocity.(arrayList{aa}).mean(:,dims2test(dd))],2);
             errorbar(taxis(1:end-1), avgTraj2,avgSEM, 'Color',colorArray(aa,:),'linew',5); hold on
             ylabel('Speed, au'); xlabel('Time, s'); ylim([0 2]); xlim([-0.8 0.8]); 
             l = legend('M3','PMv','M1','S1');
         end
         hold off
-       sgtitle(['Neural Trajectory Velocities, Dim = ' num2str(dim2test(dd))],'FontSize',28,'FontWeight','bold');
-       if saveFlag
-           saveas(fig3, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_Avg_' num2str(dim2test(dd)) 'D.fig']);
-           saveas(fig3, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_Avg_' num2str(dim2test(dd)) 'D.png']);
-       end
+        sgtitle(['Neural Trajectory Velocities, Dim = ' num2str(dims2test(dd))],'FontSize',28,'FontWeight','bold');
+
 
         fig4 = figure('Position', [476    83   975   783]);
         for aa = 1:length(arrayList)
             subplot(2,2,aa)
-            
-            errorbar(taxis(1:end-1), thrVelocity.(arrayList{aa}).mean(:,dim2test(dd)), thrVelocity.(arrayList{aa}).sem(:,dim2test(dd)) ,'Color','r','linew',2); hold on
-            errorbar(taxis(1:end-1), lsVelocity.(arrayList{aa}).mean(:,dim2test(dd)), lsVelocity.(arrayList{aa}).sem(:,dim2test(dd)),'Color','b','linew',2); 
-            errorbar(taxis(1:end-1), chewVelocity.(arrayList{aa}).mean(:,dim2test(dd)), chewVelocity.(arrayList{aa}).sem(:,dim2test(dd)) ,'Color','g','linew',2); 
-            avgTraj3 = mean([thrVelocity.(arrayList{aa}).mean(:,dim2test(dd)), lsVelocity.(arrayList{aa}).mean(:,dim2test(dd)), chewVelocity.(arrayList{aa}).mean(:,dim2test(dd))],2);
+
+            errorbar(taxis(1:end-1), thrVelocity.(arrayList{aa}).mean(:,dims2test(dd)), thrVelocity.(arrayList{aa}).sem(:,dims2test(dd)) ,'Color','r','linew',2); hold on
+            errorbar(taxis(1:end-1), lsVelocity.(arrayList{aa}).mean(:,dims2test(dd)), lsVelocity.(arrayList{aa}).sem(:,dims2test(dd)),'Color','b','linew',2);
+            errorbar(taxis(1:end-1), chewVelocity.(arrayList{aa}).mean(:,dims2test(dd)), chewVelocity.(arrayList{aa}).sem(:,dims2test(dd)) ,'Color','g','linew',2); 
+            avgTraj3 = mean([thrVelocity.(arrayList{aa}).mean(:,dims2test(dd)), lsVelocity.(arrayList{aa}).mean(:,dims2test(dd)), chewVelocity.(arrayList{aa}).mean(:,dims2test(dd))],2);
             plot(taxis(1:end-1), avgTraj3,'--k','linew',5);       
             ylabel('Speed, au'); xlabel('Time, s'); ylim([0 2.2]); xlim([-0.8 0.8]);
             title([arrayList{aa}])
 
         end
-       sgtitle(['Neural Trajectory Speeds, ' num2str(dim2test(dd)) '-D'],'FontSize',28,'FontWeight','bold');
-       if saveFlag
-           saveas(fig4, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_byExp_' num2str(dim2test(dd)) 'D.fig']);
-           saveas(fig4, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTraj_byExp_' num2str(dim2test(dd)) 'D.png']);
-       end
-    end % end dimensions to test
+       sgtitle(['Neural Trajectory Speeds, ' num2str(dims2test(dd)) '-D'],'FontSize',28,'FontWeight','bold');
+     
 
+    end % end dimensionsList
 
-    for aa = 1:length(arrayList)
-
-        fig5 = figure('Position', [1    85   384   781]);
-        dim2test = [8 12 20];
-        
-        for dd = 1:length(dim2test)
-        
-            subplot(3,1,dd)
-            errorbar(taxis(1:end-1), thrVelocity.(arrayList{aa}).mean(:,dd), thrVelocity.(arrayList{aa}).sem(:,dd) ,'Color','r','linew',2); hold on
-            errorbar(taxis(1:end-1), lsVelocity.(arrayList{aa}).mean(:,dd), lsVelocity.(arrayList{aa}).sem(:,dd),'Color','b','linew',2); 
-            errorbar(taxis(1:end-1), chewVelocity.(arrayList{aa}).mean(:,dd), chewVelocity.(arrayList{aa}).sem(:,dd) ,'Color','g','linew',2); hold off
-            ylim([0 2.2]); xlim([-0.8 0.8]); ylabel('Speed, au'); xlabel('Time, s')
-            title([arrayList{aa} '; Dims = ' num2str(dim2test(dd))])
-    
-        end
-        if saveFlag
-            saveas(fig5, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTrajVelocities_' arrayList{aa} '.fig']);
-            saveas(fig5, ['/Users/geena/Dropbox/PhD/Manuscript/figures/neuralTrajVelocities_' arrayList{aa} '.png']);
-        end
-    end
-%%
-
-
-
-end
+end % end subjectList
