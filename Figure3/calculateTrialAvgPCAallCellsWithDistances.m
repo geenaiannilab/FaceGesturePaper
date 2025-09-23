@@ -19,19 +19,19 @@ clear all; close all;
 set(0,'defaultAxesFontSize',36); set(0, 'DefaultLineLineWidth', 4);
 set(0,'defaultAxesFontWeight','bold')
 
-date = '210704';
+date = '210805ear';
 subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 
 
 regions = getChannel2CorticalRegionMapping(subject, 1);
-chls = 33:240;
+chls = 1:240;
 
-subsessions2plot = [2:5 7:10];
+subsessions2plot = [9 10 11 12 14];
 bhvs2plot = [1 2 4];
 
 % DO NOT CHANGE!
-win = 0.03;  % in sec
+win = 0.02;  % in sec
 tmin = 1;
 tmax = 1;
 minRestFlag = 1;
@@ -318,7 +318,7 @@ cfg.rngSeed     = 13;        % for reproducibility
     cfg);
 
 if saveFlag
-    save([ 'MatFiles/Fig3C_' regions{6}.label '.mat'], 'allDataOut','chls',...
+    save([ workdir '/neuralTraj_' regions{rr}.label '_0.2.mat'], 'allDataOut','chls',...
         'date','subject','subsessions2plot','bhvs2plot','win','tmin','tmax','taxis2take',...
         'shuffleStats','shuffleNull','cfg');
 end

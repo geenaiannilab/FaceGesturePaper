@@ -17,32 +17,37 @@
 % written GRI 250911
 
 clear all; close all; 
+% dates2analyze = {'Barney_210704', 'Barney_210706', 'Barney_210805',...
+%     'Thor_171005','Thor_171010','Thor_171027','Thor_171128'};
 
-dates2analyze = {'Thor_171010','Thor_171005','Thor_171027','Thor_171128',...
-    'Barney_210704','Barney_210706','Barney_210805'};
+data = load('MatFiles/euclideanDistances_All_0.02.mat');
 regions = {'S1','M1','PMv','M3','All'};
+
+allDataOut_days = data.allDataOut_days;
+shuffleStats_days = data.shuffleStats_days;
+shuffleNull_days = data.shuffleNull_days;
+taxis = data.taxis;
+
+% allDataOut_days = [];
+% shuffleStats_days = [];
+% shuffleNull_days = [];
+% 
+
+% for dd = 1:length(dates2analyze)
+%     workdir = ['~/Dropbox/PhD/SUAinfo/' dates2analyze{dd} '/Data4Analysis/'];
+%     data(dd) = load([workdir '/neuralTraj_All_0.2.mat']);
+%     allDataOut_days{dd} = data(dd).allDataOut;
+%     shuffleStats_days{dd} = data(dd).shuffleStats;
+%     shuffleNull_days{dd} = data(dd).shuffleNull;
+% end
 
 colorMap = [0.4940 0.1840 0.5560;...
     0.6350 0.0780 0.1840;...
     0.8500 0.3250 0.0980;...
     0.9290 0.6940 0.1250;
-    0.25 0.25 0.25];
-
-
-allDataOut_days = []; 
-shuffleStats_days = [];
-shuffleNull_days = [];
-
-for dd = 1:length(dates2analyze)
-    workdir = ['~/Dropbox/PhD/SUAinfo/' dates2analyze{dd} '/Data4Analysis/'];
-    data(dd) = load([workdir '/neuralTraj_All.mat']);
-    allDataOut_days{dd} = data(dd).allDataOut;
-    shuffleStats_days{dd} = data(dd).shuffleStats;
-    shuffleNull_days{dd} = data(dd).shuffleNull;
-end
+    0.75 0.75 0.75];
 
 %% summarize distances and stats across days 
-
 summary = summarize_distance_across_days( ...
     allDataOut_days, shuffleStats_days, shuffleNull_days, regions, ...
     'Pairs', {'ThrVCh','ThrVLS','LSVCh','Average'}, ...
@@ -51,14 +56,14 @@ summary = summarize_distance_across_days( ...
 
 
 %% do the plotting per region 
-plot_distance_summary(summary, regions, data(1).taxis2take, ...
+plot_distance_summary(summary, regions, taxis, ...
     'Pairs', {'ThrVCh','ThrVLS','LSVCh','Average'}, ...
     'RegionColors', colorMap, ...
     'ShowPerDay', true, ...
     'PerDayAlpha', 0.15);   % how much to lighten per-day lines
 
 %% plot regions against one another 
-plot_average_distance_overlay(summary, regions, data(1).taxis2take, ...
+plot_average_distance_overlay(summary, regions, taxis, ...
     'PairName','Average', ...
     'RegionColors', colorMap, ...
     'MeanLineWidth', 5, ...
@@ -327,7 +332,8 @@ for rr = 1:numel(regionLabels)
     semCol  = lighten_color(baseCol, 0.55);                % SEM band tint
     dayCol  = lighten_color(baseCol, min(max(PerDayAlpha,0),1)); % per-day lines tint
 
-    figure('Name',sprintf('Summary %s', rlab),'Color','w');
+    fig = figure('Name',sprintf('Summary %s', rlab),'Color','w');
+    fig.Position =  [626 47 1298 774];
     tl = tiledlayout(1, nP, 'Padding','compact','TileSpacing','compact');
 
     axList = gobjects(1,nP);
@@ -445,7 +451,8 @@ regionLabels = normalizeCellStr(regionLabels);
 T = numel(tAxis);
 
 % ---- figure ----
-figure('Name','Average Distance Overlay','Color','w');
+fig=figure('Name','Average Distance Overlay','Color','w');
+fig.Position =  [626 47 1298 774];
 ax = axes; hold(ax,'on');
 
 % 1) Draw region null percentile bands FIRST (behind lines)
