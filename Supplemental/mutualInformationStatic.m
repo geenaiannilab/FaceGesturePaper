@@ -13,11 +13,11 @@ clear all ; close all
 dates = {'Barney_210704','Barney_210706','Barney_210805', ...
          'Thor_171005','Thor_171010','Thor_171027','Thor_171128'};
 baseDir = '~/Dropbox/PhD/SUAInfo/';
-saveFlag = 1;
+saveFlag =1;
 
 binSize   = 0.001;  % sec
 nShuffles = 10000;
-alpha     = 0.05;
+alpha     = 0.01;
 time2keep = [-1 1];
 
 % Pooled results across days
@@ -46,7 +46,7 @@ for dd = 1:numel(dates)
 
     % --- preprocess: remove near-silent cells ---
     cellTotals = squeeze(sum(sum(spikes,1),2));
-    keepCells  = cellTotals > 1;
+    keepCells  = cellTotals > 10;
     spikes = spikes(:,:,keepCells);
     regions_day = dat.cortRegion(keepCells);
 

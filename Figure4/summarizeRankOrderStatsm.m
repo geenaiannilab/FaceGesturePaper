@@ -26,16 +26,17 @@ combined = summarize_rankorder_results_dirs({''}, 'DayLabel','dir', ...
 % plot spearman by region summary 
 %%
 plot_rankorder_by_region(combined, ...
-    'Metric','Spearman', ...
+    'Metric','Kendall', ...
     'RegionSrc','File', ...
     'RegionPatterns', {'All','All'; 'S1','S1'; 'M1','M1'; 'PMv','PMv'; 'M3','M3'}, ...
     'NBoot',5000, 'ShowPoints',true);
-%%
+
+
 % Spearman summary
 %plot_rankorder_summary(combined, 'Metric','Spearman', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
 
 % Kendall summary (optional)
-%plot_rankorder_summary(combined, 'Metric','Kendall', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
+plot_rankorder_summary(combined, 'Metric','Kendall', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
 
 
 function [combined] = summarize_rankorder_results_dirs(dirList, varargin)
@@ -357,9 +358,8 @@ for r = 1:numel(regionList)
         strjoin(arrayfun(@(n)sprintf('%d',n), nPer,'UniformOutput',false), ', ')), ...
         'EdgeColor','none','HorizontalAlignment','left','FontSize',14);
     
-    plotFig = gcf; plotFig.Position = [624    86   688   780];
-    savefig(['~/Desktop/' reg{1} '_rankOrder.fig'])
-    exportgraphics(plotFig, ['~/Desktop/' reg{1} '_rankOrder.pdf'], 'ContentType', 'vector');
+    print_rankorder_APA(sprintf('Region %s — %s', reg, char(metric)), ...
+    char(metric), pairDisplay, mu, CI, pComb);
 
 end % end regions 
 end
@@ -489,9 +489,71 @@ annotation('textbox',[0.13 0.01 0.8 0.05], 'String', ...
     sprintf('Stars reflect combined Mantel p (Fisher). Points = per-day estimates (n per pair: %s).', ...
     strjoin(arrayfun(@(n)sprintf('%d',nPer(i)), (1:M), 'UniformOutput',false), ', ')), ...
     'EdgeColor','none','HorizontalAlignment','left','FontSize',14);
+
+print_rankorder_APA('Across-day summary', char(metric), pairDisplay, mu, CI, pComb);
+
+
 end
 
 % ---------- helper ----------
+% ========== Helper: APA-style console print for each figure ==========
+function print_rankorder_APA(contextLabel, metric, pairLabels, mu, CI, pComb)
+% Prints APA-style summary lines for each figure/panel:
+% "<context> | pair: Median ρ = .42, 95% CI [.31, .53], p = .004"
+%
+% metric: 'Spearman' or 'Kendall'
+% pairLabels: 1xM cellstr of display names (e.g., {'Threat–LS','Threat–Chew','LS–Chew'})
+% mu:   Mx1 vector of medians (per pair)
+% CI:   2xM matrix of 95% CIs (rows: [low; high])
+% pComb: Mx1 vector of (combined) p-values
+
+    if isstring(pairLabels); pairLabels = cellstr(pairLabels); end
+    if isrow(mu),   mu   = mu(:);   end
+    if isrow(pComb),pComb= pComb(:);end
+
+    switch lower(metric)
+        case 'spearman', sym = '\rho';
+        case 'kendall',  sym = '\tau';
+        otherwise,       sym = '\rho';
+    end
+
+    fprintf('\n--- APA summary: %s ---\n', contextLabel);
+    for i = 1:numel(mu)
+        if ~isfinite(mu(i)) || ~all(isfinite(CI(:,i)))
+            fprintf('  %s: (insufficient data)\n', pairLabels{i});
+            continue;
+        end
+        m  = mu(i);
+        lo = CI(1,i);
+        hi = CI(2,i);
+        p  = pComb(i);
+
+        fprintf('  %s: Median %s = %s, 95%% CI [%s, %s], %s\n', ...
+            pairLabels{i}, sym, fmtNum(m), fmtNum(lo), fmtNum(hi), fmtP(p));
+    end
+end
+
+% --- tiny formatters (APA-ish) ---
+function s = fmtNum(x)
+    if ~isfinite(x), s = 'NaN'; return; end
+    s = sprintf('%.3f', x);
+    s = strrep(s,'-0.','-.');     % drop leading zero for negatives
+    if startsWith(s,'0.'),  s = s(2:end); end
+end
+
+function s = fmtP(p)
+    if ~isfinite(p) || isnan(p)
+        s = 'p = NaN'; return;
+    end
+    if p < 0.001
+        s = 'p < .001';
+    else
+        s = sprintf('p = %.3f', p);
+        s = strrep(s,'0.','.');
+    end
+end
+
+
 function s = pformat(p)
     if ~isfinite(p) || isnan(p), s = 'NaN'; return; end
     if p < 1e-3

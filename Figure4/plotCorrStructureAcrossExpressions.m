@@ -17,12 +17,10 @@ close all; clear all
 set(0,'defaultAxesFontSize', 24); % bc im blind 
 set(0,'defaultAxesFontWeight', 'bold'); 
 
-workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure3/matFiles/CorrelationMatrices';
+workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matFiles/CorrelationMatrices';
 regions = {'S1','M1','PMv','M3','All'};
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};
-
-data = load('combinedData_R2_pairwiseNeuralCorrelations.mat');
 
 % region colormap
 cmap1 = [0.4940 0.1840 0.5560	
@@ -128,20 +126,18 @@ end
 
 %% Plot the R^2 values across all days
 %% Fig 4C
+data = load('combinedData_R2_pairwiseNeuralCorrelations.mat');
 
 combinedData_1v2 = data.combinedData_1v2;
 combinedData_1v3 = data.combinedData_1v3;
 combinedData_2v3 = data.combinedData_2v3;
 
-combinedPval_1v2 = data.combinedPval_1v2;
-combinedPval_1v3 = data.combinedPval_1v3;
-combinedPval_2v3 = data.combinedPval_2v3;
+combinedPval_1v2 = data.combinedP_1v2;
+combinedPval_1v3 = data.combinedP_1v3;
+combinedPval_2v3 = data.combinedP_2v3;
 
 combinedMeansAllBhv = data.combinedMeansAllBhv;
 combinedStdAllBhv = data.combinedStdAllBhv;
-
-combinedMeansAllBhvAllRegions = data.combinedMeansAllBhvAllRegions;
-combinedStdAllBhvAllRegions = data.combinedStdAllBhvAllRegions;
 
 
 %% Plot R2 for threat v lipsmack (bhv1v2)
@@ -224,6 +220,7 @@ for dd = 1:size(combinedData_2v3,1)
     end
 end
 
+%%
 for rr = 1:length(regions)
     scatter(rr*2, combinedMeansAllBhv(rr),500,cmap1(rr,:),'+','linew',4);
     hold on 

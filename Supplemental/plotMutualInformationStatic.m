@@ -4,7 +4,8 @@ clear all ; close all ;
 set(0,'defaultAxesFontSize',20)
 
 baseDir = '~/Dropbox/PhD/SUAInfo/';
-load([baseDir 'MIResults_allDays.mat']); 
+load([baseDir 'MIResults_allDays_500ms.mat']); 
+colorMap = [0.494 0.184 0.556; 0.635 0.078 0.184; 0.85 0.325 0.098; 0.929 0.694 0.125];
 
 
 %% --- POOLED: Bias-corrected MI violin with overlays ---

@@ -4,13 +4,15 @@
 %%%%%%% Facial gestures are distinguishable during a naturalistic social paradigm
 %%%%%%%%%
 %%%%%%%%% GRI 09/11/2025 
+%%%%%%%  markerTrajectories.mat contains results of behavioral trajectories
+%%%%%%%         in face-marker space; contained in bhvTraj structure
+%%%%%%%         (nTimepoints x nPCs) 
+%%%%%%%  markerTrajectoriesTSNE.mat contains dimensionality-reduced
+%%%%%%%         results (tsneResults.Y is nTimepoints x nDims) 
 
 clear all; close all;
 set(0,'defaultAxesFontSize',24)
 
-%subject = 'Barney'; 
-%date = '210704';
-%workDir = ['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/DLC'];
 thisDir = pwd;
 workDir = [thisDir '/MatFiles/'];
 tsneResults = load([workDir '/markerTrajectoriesTSNE.mat']);
@@ -21,7 +23,7 @@ tmin = taxis(1); tmax = taxis(end);
 %% plot 10% of trials starting position (THIS IS SLOW) 
 figure;
 colors = 'rbg';
-sampleFrac = 0.01;
+sampleFrac = 0.02;
 nTotalTrials = sum([size(markerData2plot(1).data,2),size(markerData2plot(2).data,2),size(markerData2plot(3).data,2)]);
 randSample = ceil(sampleFrac*nTotalTrials);
 
@@ -65,14 +67,12 @@ title(['Marker Positions; Eigenspectrum; tmin = ' num2str(tmin) ' tmax = ' num2s
 %% 2D depiction of PC weights
 for PC = 1:5
     fig = figure; 
-    %subplot(1,5,PC)
     x=[]; y = []; radius = [];
     for i = 1:length(markerLabels)
         xpos = (i*2) - 1;
         ypos = (i*2);
         x(i) = meanPos(xpos);
         y(i) = -meanPos(ypos);
-        %radius(i) = mean([abs(PCweights(xpos,PC)) abs(PCweights(ypos,PC))]);
         radius(i) = PCweights(ypos,PC);
     end
     s = scatter(x,y,abs(radius)*scalar,radius,'filled'); 
@@ -137,55 +137,31 @@ sgtitle(['FaceMotion PCs; tmin = ' num2str(tmin) ' tmax = ' num2str(tmax)],'Font
 
 
 %% plot per trial PCs 
-for bhv = 1:length(bhvs2plot)
-    fig = figure('Position', get(0, 'Screensize')); 
-
-    trials = size(bhvTraj(bhv).data,2);
-    
-    for PC = 1:3
-    subplot(2,3,PC)
-
-        for tt = 1:trials
-            markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
-            plot(taxis, markerPos,'Color',colors(bhvs2plot(bhv))); hold on
-        end 
-        hold off ; ax = gca; ax.YAxis.Visible = 'off';
-        title(['Per Trial PC=' num2str(PC)],'FontSize',20)
-
-        subplot(2,3,PC+3)
-        for tt = 1:trials
-            markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
-            markerVel = diff(markerPos) ./ diff(taxis);
-            plot(taxis(1:end-1), markerVel,'Color',colors(bhvs2plot(bhv))); hold on ;
-        end
-        hold off; ax = gca; ax.YAxis.Visible = 'off';
-        title(['MarkerVelocity, PC=' num2str(PC)],'FontSize',20)
-
-    end
-    sgtitle(['Bhv = ' gestureNames{bhv}],'FontSize',30);
-end
-
-%%
-
-% 
-% figure;
-% colors = 'rbg';
-% 
 % for bhv = 1:length(bhvs2plot)
+%     fig = figure('Position', get(0, 'Screensize')); 
+% 
+%     trials = size(bhvTraj(bhv).data,2);
 %     
-%     for i = 1:length(markerLabels)
-%         xpos = (i*2) - 1;
-%         ypos = (i*2);
-%         x = markerData2plot(bhv).avg(:,xpos);
-%         y = -markerData2plot(bhv).avg(:,ypos);
-%         xErr = markerData2plot(bhv).sem(:,xpos)';
-%         yErr = markerData2plot(bhv).sem(:,ypos)';
-%         err = [xErr; yErr];
-%         shadedErrorBar(x,y,err,'lineprops',{colors(bhv),'linew',5}); hold on
+%     for PC = 1:3
+%     subplot(2,3,PC)
+% 
+%         for tt = 1:trials
+%             markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
+%             plot(taxis, markerPos,'Color',colors(bhvs2plot(bhv))); hold on
+%         end 
+%         hold off ; ax = gca; ax.YAxis.Visible = 'off';
+%         title(['Per Trial PC=' num2str(PC)],'FontSize',20)
+% 
+%         subplot(2,3,PC+3)
+%         for tt = 1:trials
+%             markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
+%             markerVel = diff(markerPos) ./ diff(taxis);
+%             plot(taxis(1:end-1), markerVel,'Color',colors(bhvs2plot(bhv))); hold on ;
+%         end
+%         hold off; ax = gca; ax.YAxis.Visible = 'off';
+%         title(['MarkerVelocity, PC=' num2str(PC)],'FontSize',20)
 % 
 %     end
+%     sgtitle(['Bhv = ' gestureNames{bhv}],'FontSize',30);
 % end
-% title('Mean and SEM positions, all Trials')
-% 
-% 
 % 

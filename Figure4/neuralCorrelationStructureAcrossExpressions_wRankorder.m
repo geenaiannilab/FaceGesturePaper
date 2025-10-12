@@ -19,11 +19,13 @@ subject ='Thor';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 outdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/CorrMatricesV2']);
 
-subsessions2plot = [2:5 7:10];
+subsessions2plot = [ 1 2 4 5];
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};
 nClust = 5;
 defBhv = 2;
+nPerm = 10000; % permutations for significant testing; random relabeling of gestures
+nBoot = 5000; % bootstrapping for CIs; redraw neurons and recomputed correlation matrices 
 
 saveFlag = false;
 
@@ -239,7 +241,7 @@ for aa = 1:length(regions)
 
     % Run rank-order similarity (Spearman) with Mantel permutations + bootstrap CIs
     out = rankOrderSpearmanKendall3(R1, R2, R3, ...
-        'NPerm', 1000, 'NBoot', 5000, 'Tail', 'both', 'Seed', 123, 'UseDiag', false);
+        'NPerm', nPerm, 'NBoot', nBoot, 'Tail', 'both', 'Seed', 123, 'UseDiag', false);
     disp('=== Rank-order similarity across the three behaviors (signal) ===');
     disp(out.summary);
 

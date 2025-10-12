@@ -7,8 +7,8 @@
 
 close all; clear all
 
-dates = {'210704','210706','210805'};
-subject ='Barney';
+dates = {'171005','171010','171027','171128'};
+subject ='Thor';
 regions = {'S1','M1','PMv','M3','All'};
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};
