@@ -31,7 +31,7 @@ results = data.results;
 alpha_cf = 0.01;     % cluster-forming p-threshold (per-time)
 nPerm    = 10000;     % number of permutations for max cluster mass null
 useDirectionalBetweenShading = false;  % true: shade by winner color; false: blended color
-errorType = 1; % 1 = SEM across iter, 2 = mean SEM across iters, 3 = std across all iters 
+errorType = 1; % 1 = SEM across iter
 
 %% define time axis 
 firstWindowCenter = results(1).desiredStart + results(1).windowLength/2;

@@ -57,7 +57,8 @@ title('Cumulative Variance Explained');
 [~,~,id] = unique(allTrials.trialType);
 colors = 'rbgck';
 markers = 'osd*.';
-plotFig = figure;
+plotFig = figure; plotFig.Position = [476    92   946   774];
+
 for idx = 1:length(unique(allTrials.trialType))'
     dat2plot = score(allTrials.trialType == bhvs2plot(idx),:);
     scat(idx) = scatter3(dat2plot(:,1), dat2plot(:,2), dat2plot(:,3), 500, [colors(idx) markers(idx)], 'filled',...
@@ -69,6 +70,12 @@ ylabel('Neural PC2')
 zlabel('Neural PC3')
 title(['Single Trials of Facial Gesture ']); 
 legend('Threat','Lipsmack','Chew')
+
+ax = gca;
+set(ax, 'CameraPosition',  [-84.9252   76.9082   48.6309], ...
+        'CameraTarget',    [2.5 2.5 0], ...
+        'CameraUpVector',  [0 0 1], ...
+        'CameraViewAngle', 10.18);
 
 % % figure; imagesc(allCellsPerTrialSpikeCount'); colormap(jet); ylabel('cell'); xlabel('trial#'); 
 % % colorbar;
