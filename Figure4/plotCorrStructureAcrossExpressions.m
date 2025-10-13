@@ -234,5 +234,7 @@ axes = gca;
 axes.XTick = 2:2:10;
 axes.XTickLabel = regions;
 
-%%
-
+%% all regions, all days average R^2 per comparison
+allData = cat(3,combinedData_1v2, combinedData_1v3,combinedData_2v3);
+disp('Mean R-squared per gesture-gesture comparsion:')
+allMeans = squeeze(mean(allData(:,1:4,:), [1 2]))'

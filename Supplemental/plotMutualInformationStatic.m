@@ -21,10 +21,10 @@ end
 %% --- Plot Bias-corrected MI by region---
 figure; 
 violinplot(MI_corrPlot_all, regions_all,'facecolor', colorMap);          % returns one object per region
-xticks(1:nRegs); xticklabels(uRegs);
+xticks(1:nRegs); xticklabels(uRegs);l = legend;
 ylabel('Bias-corrected MI (bits)');
 title(['Per-region MI_{corr} (pooled across days)', 'tmin: ' num2str(time2keep(1)) ' , tmax:' num2str(time2keep(2))]);
-axes = gca; 
+axes = gca; axes.FontSize = 28; axes.FontWeight = 'bold';
 
 [p_corr,~,stats_corr] = kruskalwallis(MI_corr_all, regions_all, 'off');
 if p_corr < 0.05

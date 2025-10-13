@@ -18,7 +18,7 @@ saveFlag =1;
 binSize   = 0.001;  % sec
 nShuffles = 10000;
 alpha     = 0.01;
-time2keep = [-1 1];
+time2keep = [-0.5 0.5];
 
 % Pooled results across days
 MI_corr_all = [];
@@ -86,7 +86,7 @@ uRegs   = unique(regions,'stable');
 nRegs   = numel(uRegs);
 
 % fraction significant per region (pooled)
-isSig   = (pvals_all < alpha);
+isSig   = (pvals_all < 0.05);
 fracSig = zeros(nRegs,1);
 counts  = zeros(nRegs,2); % [#sig, #nonsig]
 for i = 1:nRegs
@@ -104,7 +104,7 @@ fprintf('Chi-square (pooled) across regions: χ²(%d) = %.2f, p = %.4f\n', ...
 
 %%%
 if saveFlag 
-    save([baseDir 'MIResults_allDays.mat']);
+    save([baseDir 'MIResults_allDays_500ms.mat']);
 end
 %%%%%%%%%%%%%%%%%%%%%
 

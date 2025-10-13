@@ -11,7 +11,7 @@
 % written GRI 250911
 
 clear all ; 
-data = load('/MatFiles/Fig3A.mat');
+data = load('MatFiles/Fig3A.mat');
 sqrtFlag = 0;
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
 centerNormalizeFlag = 1; % normalize cells/variables by their variance in addition to mean-centering (PCA on correlation matrix)    

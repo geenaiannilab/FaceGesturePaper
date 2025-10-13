@@ -625,9 +625,9 @@ for p = 1:nPairs
     % draw horizontal significance bar along bottom (solid black)
     bar_sig_ax(ax, tCenters, between{p}.sig_mask, [0 0 0], yMinAll, barH);
 
-    if p == 1
+    %if p == 1
         legend(ax, [hA hB], {arrayList{i}, arrayList{j}}, 'Location','best');
-    end
+   % end
     xlabel(ax,'Time'); ylabel(ax,'Decoding accuracy');
     title(ax, sprintf('%s vs %s (cluster-corr)', arrayList{i}, arrayList{j}));
     grid(ax,'on'); box(ax,'off');

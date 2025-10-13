@@ -125,9 +125,6 @@ for bhv = 1:length(bhvs2plot)
 
         shadedErrorBar(taxis,bhvTraj(bhv).avg(:,PC),bhvTraj(bhv).sem(:,PC),'lineprops',{'Color',colors(bhvs2plot(bhv)),'linew',8}); hold on;
 
-        %  plot(downsampledTimeAxis,bhvTraj(1).avg(:,PC),'r','linew',6); hold on; ...
-      %      plot(downsampledTimeAxis,bhvTraj(2).avg(:,PC),'b','linew',6)
-      %      plot(downsampledTimeAxis,bhvTraj(3).avg(:,PC),'g','linew',6); hold off
         title(['PC=' num2str(PC)],'FontSize',20)
     end
 end

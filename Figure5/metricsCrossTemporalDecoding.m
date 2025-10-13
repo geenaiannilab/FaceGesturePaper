@@ -200,7 +200,7 @@ TGW = nan(R,1); TGWsem = nan(R,1);
 for r = 1:R
     CTD = ctdat.validationScoreStruct.(arrayList{r}); % T x T x N
     di  = diagonality_index(CTD, 'band', band, 'chance', chance);
-    tgw = temporal_generalization_width(CTD, 'chance', chance, 'tAxis', tAxis);
+    tgw = temporal_generalization_width(CTD, 'chance', chance,'tAxis', tAxis);
     DI(r)    = di.mean;   DIsem(r)  = di.sem;
     TGW(r)   = tgw.mean;  TGWsem(r) = tgw.sem;
 end
@@ -243,7 +243,7 @@ for r = 1:R
     errorbar(ax2, r, TGW(r), TGWsem(r), 'k.', 'LineWidth', 2, 'CapSize', 3);
 end
 xticks(ax2, 1:R); xticklabels(ax2, arrayList); xtickangle(ax2, 30);
-if isempty(tAxis), ylabel(ax2, 'Width (bins)'); else, ylabel(ax2, 'Width (time)'); end
+if isempty(tAxis), ylabel(ax2, 'Width (bins)'); else, ylabel(ax2, 'Width (seconds)'); end
 title(ax2, 'Temporal Generalization Width');
 box(ax2,'off'); 
 

@@ -18,6 +18,7 @@ set(0,'defaultAxesFontWeight','bold')
 
 %% load data
 data = load(['Matfiles/neuralTrajectory_combined.mat']);
+subject2analyze = {'combined'};
 
 %% extract parameters
 bhvs = {'Thr','LS','Chew'};
@@ -163,3 +164,5 @@ for ss = 1:length(subject2analyze)
     end % end dimensionsList
 
 end % end subjectList
+
+
