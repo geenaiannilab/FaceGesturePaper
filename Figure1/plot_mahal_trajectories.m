@@ -1,16 +1,33 @@
 
 close all; clear all;
 
-load('markerTrajectoriesForMovie.mat');
+load('Matfiles/markerTrajectoriesForMovies.mat');
 
-nBootstrap = 10000; 
+nBootstrap = 100; 
 
 nThreats = size(bhvTraj(1).data,2);
 nLS = size(bhvTraj(2).data,2);
 nChew = size(bhvTraj(3).data,2);
 nTrials = [nThreats nLS nChew];
 colorMap = [1 0 0 ; 0 0 1; 0 1 0];
-taxis = taxis*1000;
+Time = taxis*1000;
+msPerFrame = 10;
+onsetIdx = find(taxis == 0);
+
+outDir = '~/Desktop/';
+
+% Call the function
+make_marker_movies_biggestTrial(markerData2plot, ...
+    'Time', Time, ...
+    'MsPerFrame', msPerFrame, ...
+    'OnsetIdx', onsetIdx, ...
+    'NTrail', 5, ...
+    'Colors', [1 0 0; 0 0 1; 0 1 0], ...
+    'GestureNames', {'threat','lipsmack','chew'}, ...
+    'InvertY', true, ...
+    'FPS', 24, ...
+    'FrameStep', 1, ...
+    'OutDir', outDir);
 
 % Compute (diag Σ is usually fine in PC space)
 out = mahal_from_trials(bhvTraj, 'CovMode','diag', 'B', nBootstrap, 'Reg', 1e-6, 'Verbose', true);
@@ -25,11 +42,11 @@ plot(taxis, out.D,'linew',8); legend({'Thr-LS', 'Thr-Ch', 'LS-Ch'}, 'Location','
 title('Pairwise Mahalanobis distances between gesture trajectories');
 
 %%
-% make_marker_movies(markerData2plot, ...
-%     'Time', taxis, ...
-%     'TopFrac', 0.05, 'MinTrials', 5, ...
-%     'OutDir', './movies', 'FPS', 48, 'FrameStep', 1, ...
-%     'InvertY', true, 'Colors', colorMap);
+make_marker_movies(markerData2plot, ...
+    'Time', taxis, ...
+    'TopFrac', 0.01, 'MinTrials', 5, ...
+    'OutDir', './movies', 'FPS', 48, 'FrameStep', 1, ...
+    'InvertY', true, 'Colors', colorMap);
 
 make_marker_movies_meanfade(markerData2plot, ...
     'Time', taxis, ...             % [T x 1] with 0 = onset
@@ -500,6 +517,7 @@ end
 end
 
 function make_marker_movies(markerData2plot, varargin)
+
 % MAKE_MARKER_MOVIES  Per-gesture movies of 2-D facial markers.
 % - Selects top 20% biggest trials by displacement (baseline -500..0ms vs 0..2000ms)
 % - Renders window -500..+2000 ms around onset
@@ -661,4 +679,182 @@ for g=1:3
 end
 
 fprintf('All movies done.\n');
+end
+
+function make_marker_movies_biggestTrial(markerData2plot, varargin)
+% Movies: single-trial marker positions with fading tail
+%
+% markerData2plot(bhv).data: [T x Ntrials x (2*M)]
+% packed as [x1 y1 x2 y2 ...]
+%
+% Time options:
+%   'Time'       : [T x 1] ms, 0 = onset
+%   'MsPerFrame' : scalar ms per frame
+%   'OnsetIdx'   : onset index (with MsPerFrame)
+%
+% Plot options:
+%   'NTrail'       (default 5)     % how many past frames are kept
+%   'Colors'       (default [1 0 0; 0 0 1; 0 1 0])
+%   'GestureNames' (default {'threat','lipsmack','chew'})
+%   'InvertY'      (default true)
+%   'FPS'          (default 24)
+%   'FrameStep'    (default 1)
+%   'OutDir'       (default pwd)
+
+p = inputParser;
+addParameter(p,'Time',[],@(x)isnumeric(x)&&isvector(x));
+addParameter(p,'MsPerFrame',[],@(x)isnumeric(x)&&isscalar(x)&&x>0);
+addParameter(p,'OnsetIdx',[],@(x)isnumeric(x)&&isscalar(x)&&x>=1);
+addParameter(p,'NTrail',5);
+addParameter(p,'Colors',[1 0 0; 0 0 1; 0 1 0]);
+addParameter(p,'GestureNames',{'threat','lipsmack','chew'});
+addParameter(p,'InvertY',true);
+addParameter(p,'FPS',24);
+addParameter(p,'FrameStep',1);
+addParameter(p,'OutDir',pwd);
+parse(p,varargin{:});
+opt = p.Results;
+
+[T,~,P2] = size(markerData2plot(1).data);
+M = P2/2;
+
+% ----- time -----
+if ~isempty(opt.Time)
+    tms = opt.Time(:);
+else
+    tms = ((1:T)' - opt.OnsetIdx)*opt.MsPerFrame;
+end
+win  = [-500 2000];
+base = [-1000 -500];
+post = [0 2000];
+winIdx  = find(tms>=win(1)  & tms<=win(2));
+baseIdx = find(tms>=base(1) & tms<=base(2));
+postIdx = find(tms>=post(1) & tms<=post(2));
+
+% ----- select SINGLE fastest trial per gesture (speed-based) -----
+% Requires MsPerFrame or Time to infer frame duration.
+if isempty(opt.MsPerFrame)
+    if ~isempty(opt.Time)
+        % infer ms/frame from Time
+        dt = mode(diff(opt.Time));
+        MsPerFrame_eff = dt;
+    else
+        error('To select by speed, provide MsPerFrame or Time to infer frame duration.');
+    end
+else
+    MsPerFrame_eff = opt.MsPerFrame;
+end
+
+idxTrial = nan(1,3);
+for g = 1:3
+    Xg = markerData2plot(g).data;           % [T x N x 2M]
+    N  = size(Xg,2);
+    if N==0
+        idxTrial(g) = NaN; 
+        continue;
+    end
+
+    % Use post-onset period for speed computation
+    postData = Xg(postIdx,:,:);             % [Tpost x N x 2M]
+
+    % speed per trial: mean Euclidean step size per frame / MsPerFrame
+    spd = nan(N,1);
+    for n = 1:N
+        % positions over time for trial n in 2M-dim space
+        P = squeeze(postData(:,n,:));       % [Tpost x 2M]
+        if size(P,1) < 2 || all(~isfinite(P(:)))
+            spd(n) = NaN; 
+            continue;
+        end
+        dP = diff(P,1,1);                   % frame-to-frame steps [Tpost-1 x 2M]
+        step = sqrt(sum(dP.^2,2));          % Euclidean step length per frame
+        spd_per_frame = step ./ MsPerFrame_eff;  % units per ms (×1000 for per s)
+        % Summary choice: mean speed (robust alternative: prctile(spd_per_frame,95))
+        spd(n) = mean(spd_per_frame,'omitnan');
+    end
+
+    % pick the single fastest trial
+    [~,ord] = sort(spd,'descend','MissingPlacement','last');
+    idxTrial(g) = ord(2);
+end
+
+
+% ----- global axes limits from the chosen single trial in each gesture -----
+[xmin,xmax,ymin,ymax] = deal(+inf,-inf,+inf,-inf);
+for g = 1:3
+    if isnan(idxTrial(g)), continue; end
+    d  = markerData2plot(g).data(winIdx, idxTrial(g), :);   % [Twin x 1 x 2M]
+    X  = d(:,:,1:2:end); Y = d(:,:,2:2:end);
+    if opt.InvertY, Y = -Y; end
+    xmin = min(xmin, min(X(:))); xmax = max(xmax, max(X(:)));
+    ymin = min(ymin, min(Y(:))); ymax = max(ymax, max(Y(:)));
+end
+dx = xmax - xmin; dy = ymax - ymin; pad = 0.05;
+if ~isfinite(dx) || ~isfinite(dy) || dx==0 || dy==0
+    dx = 1; dy = 1; xmin = -0.5; xmax = 0.5; ymin = -0.5; ymax = 0.5;
+end
+axlim = [xmin - pad*dx, xmax + pad*dx, ymin - pad*dy, ymax + pad*dy];
+
+% ----- render movies -----
+if ~exist(opt.OutDir,'dir'), mkdir(opt.OutDir); end
+
+for g = 1:3
+    if isnan(idxTrial(g))
+        warning('Gesture %d has no valid trials. Skipping.', g);
+        continue;
+    end
+
+    d   = markerData2plot(g).data(winIdx, idxTrial(g), :);  % [Twin x 1 x 2M]
+    Tw  = size(d,1);
+    Xtr = squeeze(d(:,:,1:2:end));                          % [Twin x M]
+    Ytr = squeeze(d(:,:,2:2:end));                          % [Twin x M]
+    if opt.InvertY, Ytr = -Ytr; end
+
+    fig = figure('Color','w','Position',[100 100 800 800]);
+    ax  = axes('Parent',fig); hold(ax,'on'); axis(ax,'equal');
+    xlim(ax,axlim(1:2)); ylim(ax,axlim(3:4));
+    set(ax,'Visible','off');
+
+    % text overlays
+    xL=axlim(1); xR=axlim(2); yB=axlim(3); yT=axlim(4);
+    xLabel = xL + 0.02*(xR-xL);
+    xClock = xL + 0.68*(xR-xL);
+    yText  = yB + 0.04*(yT-yB);
+    text(ax,xLabel,yText,opt.GestureNames{g},'Color',opt.Colors(g,:), ...
+        'FontSize',16,'FontWeight','bold','HorizontalAlignment','left');
+    timeTxt = text(ax,xClock,yText,'','Color',[0 0 0], ...
+        'FontSize',14,'FontWeight','bold','HorizontalAlignment','left');
+
+    % trail scatter handles (single-trial) ------------------------------ %% CHANGED
+    scatters = gobjects(opt.NTrail, M);
+    for m = 1:M
+        for j = 1:opt.NTrail
+            scatters(j,m) = scatter(ax, nan, nan, 80, opt.Colors(g,:), ...
+                'filled', 'MarkerFaceAlpha', (j/opt.NTrail)*0.8);
+        end
+    end
+
+    vname = fullfile(opt.OutDir, sprintf('gesture_%d_biggestTrial.mp4', g));
+    vw = VideoWriter(vname,'MPEG-4'); vw.FrameRate = opt.FPS; open(vw);
+
+    for tIdx = 1:opt.FrameStep:Tw
+        % update trail points from the SINGLE trial trajectory  ---------- %% CHANGED
+        for m = 1:M
+            for j = 1:opt.NTrail
+                t0 = tIdx - (j-1);
+                if t0 >= 1
+                    set(scatters(j,m), 'XData', Xtr(t0,m), 'YData', Ytr(t0,m));
+                else
+                    set(scatters(j,m), 'XData', nan, 'YData', nan);
+                end
+            end
+        end
+        set(timeTxt,'String', sprintf('time = %d ms', round(tms(winIdx(tIdx)))));
+        drawnow limitrate nocallbacks;
+        writeVideo(vw, getframe(fig));
+    end
+
+    close(vw); close(fig);
+    fprintf('Saved %s\n', vname);
+end
 end

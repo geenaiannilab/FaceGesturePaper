@@ -8,7 +8,7 @@ set(0,'defaultAxesFontWeight','bold');
 %% data params 
 subject = 'Barney';
 date = '210704';
-runTSNE = true;
+runTSNE = false;
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
@@ -18,7 +18,7 @@ tmin = 1;
 tmax = 2;
 centerNormalizeFlag = 0;
 centerFlag = 1;
-smoothSize = 50; 
+smoothSize = 5; 
 
 minRestFlag = 1;
 minRest = abs(tmin); % in sec; minimal rest prior to move onset (trials to include)
