@@ -243,11 +243,6 @@ function result = tsne_reproducible(X, seed, varargin)
 % result = tsne_reproducible(X, seed, ...)
 %   X       : data matrix [N x D]
 %   seed    : integer seed for reproducibility
-%   varargin: extra parameters passed to tsne()
-%
-% result.Y   : the embedding [N x 2] (or higher if specified)
-% result.rng : RNG state used before tsne() started
-% result.seed: the seed provided
 
     % Save RNG state before running
     prevRng = rng;             % store to restore later if you like

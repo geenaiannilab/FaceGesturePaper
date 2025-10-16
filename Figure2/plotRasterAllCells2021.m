@@ -1,4 +1,9 @@
-
+%%%%%%%  Creates Figure 2B 
+%%%%%%%%  Single-Cell Activity and Selectivity in Cortical Face-Motor Regions
+%%%%%%%%
+%%%%%%%% Sample population activity of all simultaneously recorded cells 
+%%%%%%%% (top, sorted by area) and facial marker positions (bottom) 
+%%%%%%%%% GRI 09/11/2025 
 
 close all; clear all;
 set(0,'defaultAxesFontSize',24);

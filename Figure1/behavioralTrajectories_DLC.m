@@ -13,7 +13,7 @@ subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 gestureNames = {'threat','lipsmack','chew'};
 markers2use =  'all'; excludeTongue = 1; plotDLCFlag = false; 
-newBinSize = 0.01;
+newBinSize = 0.01; % shorter bins for smooth trajectories, bigger bins for clustering
 tmin = 1;
 tmax = 1;
 centerNormalizeFlag = 0;

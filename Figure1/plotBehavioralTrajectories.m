@@ -6,7 +6,7 @@
 %%%%%%%%% GRI 09/11/2025 
 %%%%%%%  markerTrajectories.mat contains results of behavioral trajectories
 %%%%%%%         in face-marker space; contained in bhvTraj structure
-%%%%%%%         (nTimepoints x nPCs) 
+%%%%%%%         (nTimepoints x nTrials x nPCs)
 %%%%%%%  markerTrajectoriesTSNE.mat contains dimensionality-reduced
 %%%%%%%         results (tsneResults.Y is nTimepoints x nDims) 
 
