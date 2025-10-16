@@ -1,13 +1,18 @@
 %%%%%%%%
-%%%%%%%% PLOTTING Figure 3B, S2B
+%%%%%%%% PLOTTING Figure 3B, S3A, S3B
 %%%%%%%%  Decoding gesture type from neural population activity
 %%%%%%%%
 %%%%%%%% Categorical facial gesture decoded from region-specific population spiking activity on a trial-by-trial basis
 %%%%%%%% Mean decoding accuracies ± 2 SEMs , across pseudopopulations (N=50 iterations, 50 cells per iteration, drawn from entire database)
 %%%%%%%% from -1000 ms to +1000 ms (400 ms bins in 50 ms steps)
-%%%%%%%% Grey curve indicates significance threshold based on 98th percentile of one hundred permuted decoding accuracies 
-%%%%%%%%  Significance determined at each time point, w/ right-tailed one-sample t-test, cluster-based permutation framework 
 %%%%%%%%
+%%%%%%%% Grey curve indicates significance threshold based on 98th percentile of one hundred permuted decoding accuracies 
+%%%%%%%%
+%%%%%%%%  Statistical significance determined as (Maris & Oostenveld, 2007), by comparing per region decoding at each timepoint to the 98th percentile of permuted decoding accuracies 
+%%%%%%%   Δ(t)=Accreal (t)−q98null (t) per pseudopopulation)
+%%%%%%%%  one-sample (right-tailed) t-test within a cluster-based permutation framework 
+%%%%%%%%  At each time point, across-iteration t-values computed for real decoding accuracy relative to its permutation-derived baseline (random sign-flipping of decoding time course), contiguous supra-threshold bins grouped into clusters. Cluster masses were compared against the distribution of maximum cluster masses obtained by permutations, providing family-wise error control over time. 
+
 %%%%%%%%  Will also plot decoding accuracies, compared pairwise by region
 %%%%%%%%  Black bars indicate significant difference in accuracy; two-sample Welch s t-test, cluster-based permutation correction for multiple comparisons
 %%%%%%%%
@@ -18,20 +23,19 @@ clear all; close all;
 set(0,'defaultAxesFontSize',20)
 
 %% intial set-up 
-subject = 'combined';
 nIterations = 50;
-windowLength = 0.4;
-windowShiftSize = 0.05;
+windowLength = 0.4; windowShiftSize = 0.05;
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
 %% load data 
 data = load('MatFiles/Fig3B.mat');
 results = data.results;
+
 %% -------- Cluster-based permutation parameters --------
 alpha_cf = 0.01;     % cluster-forming p-threshold (per-time)
 nPerm    = 10000;     % number of permutations for max cluster mass null
 useDirectionalBetweenShading = false;  % true: shade by winner color; false: blended color
-errorType = 1; % 1 = SEM across iter
+errorType = 1; % 2SEMs across iter 
 
 %% define time axis 
 firstWindowCenter = results(1).desiredStart + results(1).windowLength/2;
@@ -110,13 +114,13 @@ end
 hold off
 xlim([- 0.8 0.8]);
 axes = gca;
-axes.FontWeight = 'bold'
+axes.FontWeight = 'bold';
 axes.FontSize = 34;
 axes.XTick = windowsCenter(1:4:end);
 xlabel('Time (s)')
 ylabel('Mean Accuracy (%)')
 ylim([50 103])
-title(['Decoding Performance By Region'],'FontSize',45);
+title('Decoding Performance By Region','FontSize',45);
 
 
 %% Collect iteration matrices per region (real) and per-iteration null means
@@ -134,7 +138,7 @@ for r = 1:nReg
         
         A(iter,:) = validationScores(iter).(arrayList{r})(:).';
         
-        % Null: nTime x nPerms -> mean over perms (per-iteration null expectation)
+        % Null: nTime x nPerms -> mean over perms (per-iteration null)
         P = permScores(iter).(arrayList{r});   % nTime x nPerms
         B(iter,:) = mean(P, 2, 'omitnan').';
     end
@@ -143,13 +147,13 @@ end
 
 %% Per-iteration 98th percentile of the permuted (null) accuracies
 nullQ98  = cell(nReg,1);          % {r}: nIter x nTime
-permCell = cell(nReg,1);          % {r}: 1 x nIter cell of [nTime x nPerms] (for the permutation test)
+permCell = cell(nReg,1);          % {r}: 1 x nIter cell of [nTime x nPerms] 
 
 for r = 1:nReg
     Q = zeros(nIterations, nTime);
     C = cell(1, nIterations);
     for iter = 1:nIterations
-        P = permScores(iter).(arrayList{r});   % [nTime x nPerms], e.g. 100 perms
+        P = permScores(iter).(arrayList{r});   % [nTime x nPerms]
         Q(iter,:) = prctile(P, 98, 2).';       % upper 98th percentile per time (row)
         C{iter}   = P;                         % keep all perms for the cluster null
     end
@@ -185,7 +189,7 @@ plot_regions_vs_null_grid(windowsCenter, realAcc, nullQ98, within, arrayList, co
 plot_between_regions_grid(windowsCenter, realAcc, between, pairs, arrayList, colorArray, useDirectionalBetweenShading);
 
 %% ----------- Diagnostics (optional) -----------
-% Quick textual summary of between-region clusters (uncomment to print)
+% Quick textual summary of between-region clusters 
 
 for p = 1:numel(between)
     i = pairs(p,1); j = pairs(p,2);
@@ -204,18 +208,17 @@ for p = 1:numel(between)
 end
 
 
-%%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                               HELPERS                                   %
+%                  PERMUTATION BUILDERS                                   %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function out = cluster_perm_within_percentile(realMat, permCell, q, varargin)
 % Cluster permutation vs per-iteration null q-quantile baseline.
 % realMat : [nIter x T] real decoding accuracies
 % permCell: 1 x nIter cell, each [T x nPerms] permuted accuracies for that iteration
-% q       : quantile in [0,1] (e.g., 0.98)
+% q       : quantile for cut off 
 
 p = inputParser;
 addParameter(p,'alpha_cf',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
@@ -252,10 +255,9 @@ for pidx = 1:nPerm
     Dp = zeros(nIter, T);
     for i = 1:nIter
         P = permCell{i};                        % [T x nPerms]
-        k = randi(size(P,2));                  % pick one perm "as-if real"
+        k = randi(size(P,2));                  
         permTraj = P(:,k).';
         % Use the *same* Q baseline (built from all perms) for speed; 
-        % you can recompute Q excluding column k if you want a tiny bias reduction.
         Dp(i,:) = permTraj - Q(i,:);
     end
     [m0, s0, n0] = msd(Dp);
@@ -284,129 +286,10 @@ out.maxMass0 = maxMass0;
 out.info     = struct('q',q,'alpha_cf',alpha_cf,'nPerm',nPerm,'nIter',nIter,'T',T);
 end
 
-function out = cluster_perm_onesample(D, varargin)
-% One-sample cluster permutation across time using sign-flips (paired).
-% D: nIter x T (e.g., real - per-iteration null mean).
-p = inputParser;
-addParameter(p,'tail','right',@(s)ischar(s)||isstring(s));
-addParameter(p,'alpha_cf',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
-addParameter(p,'nPerm',5000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
-parse(p,varargin{:});
-tail     = lower(string(p.Results.tail));
-alpha_cf = p.Results.alpha_cf;
-nPerm    = p.Results.nPerm;
-
-% Keep bins with >=2 finite iterations
-n_t = sum(isfinite(D),1);
-keep = (n_t >= 2);
-D = D(:,keep);
-[nI,T] = size(D);
-
-% Observed one-sample t & per-time df = n-1
-[m, s, n] = msd(D);
-tObs = m ./ (s ./ sqrt(n));
-df   = max(n - 1, 1);
-
-% Cluster-forming mask from per-time p
-switch tail
-    case "both"
-        p2 = 2 * (1 - tcdf(abs(tObs), df));
-        supra = (p2 < alpha_cf);
-        massfun = @(u) sum(abs(u));   tForMass = abs(tObs);
-    case "right"
-        pR = 1 - tcdf(tObs, df);
-        supra = (pR < alpha_cf);
-        massfun = @(u) sum(u);        tForMass = tObs;
-    case "left"
-        pL = tcdf(tObs, df);
-        supra = (pL < alpha_cf);
-        massfun = @(u) sum(u);        tForMass = -tObs;
-    otherwise
-        error('tail must be right/left/both');
-end
-
-obsClusters = label_clusters(supra);
-for c = 1:numel(obsClusters)
-    seg = obsClusters(c).start:obsClusters(c).end;
-    obsClusters(c).mass = massfun(tForMass(seg));
-end
-
-% Permutation null via sign-flips per iteration (whole trajectories)
-maxMass0 = zeros(nPerm,1);
-for pidx = 1:nPerm
-    sgn = (rand(nI,1) > 0.5)*2 - 1;
-    Dp  = D .* sgn;
-    [m0,s0,n0] = msd(Dp);
-    t0  = m0 ./ (s0 ./ sqrt(n0));
-    df0 = max(n0 - 1, 1);
-    switch tail
-        case "both"
-            p20   = 2 * (1 - tcdf(abs(t0), df0));
-            supra0= (p20 < alpha_cf);
-            mass0 = max_cluster_mass(abs(t0), supra0, @(u) sum(u));
-        case "right"
-            pR0   = 1 - tcdf(t0, df0);
-            supra0= (pR0 < alpha_cf);
-            mass0 = max_cluster_mass(t0, supra0, @(u) sum(u));
-        case "left"
-            pL0   = tcdf(t0, df0);
-            supra0= (pL0 < alpha_cf);
-            mass0 = max_cluster_mass(-t0, supra0, @(u) sum(u));
-    end
-    maxMass0(pidx) = mass0;
-end
-
-sig_mask = false(1,T);
-for c = 1:numel(obsClusters)
-    cmass = obsClusters(c).mass;
-    pcl = (sum(maxMass0 >= cmass) + 1) / (nPerm + 1);
-    obsClusters(c).p = pcl;
-    if pcl < 0.05
-        sig_mask(obsClusters(c).start:obsClusters(c).end) = true;
-    end
-end
-
-% Pack back to full length if columns were dropped
-out.t        = nan(1, numel(keep)); out.t(keep) = tObs;
-out.sig_mask = false(1, numel(keep)); out.sig_mask(keep) = sig_mask;
-out.clusters = obsClusters;
-out.maxMass0 = maxMass0;
-out.info     = struct('tail',tail,'alpha_cf',alpha_cf,'nPerm',nPerm,'nIter',nI,'T',T,'keptMask',keep);
-end
-
 function out = cluster_perm_2group(A, B, varargin)
-function [m,s,n] = msd(X)
-m = mean(X,1,'omitnan');
-s = std(X,0,1,'omitnan');
-n = sum(isfinite(X),1);
-s(s==0) = inf; % t=0 where variance is 0
-end
 
-function clusters = label_clusters(mask)
-idx = find(mask(:)');
-clusters = struct('start',{},'end',{},'mass',{});
-if isempty(idx), return; end
-splits = [1, find(diff(idx) > 1) + 1, numel(idx)+1];
-for s = 1:numel(splits)-1
-    seg = idx(splits(s):splits(s+1)-1);
-    clusters(end+1).start = seg(1); %#ok<AGROW>
-    clusters(end).end     = seg(end);
-end
-end
-
-function m = max_cluster_mass(t, mask, massfun)
-cls = label_clusters(mask);
-if isempty(cls), m = 0; return; end
-ms = zeros(numel(cls),1);
-for c = 1:numel(cls)
-    seg = cls(c).start:cls(c).end;
-    ms(c) = massfun(t(seg));
-end
-m = max(ms);
-end
-
-% Two-group cluster permutation across time (independent samples).
-% A: nA x T, B: nB x T
+% Two-group cluster permutation across time (comparing region-region
+% decoding) 
 p = inputParser;
 addParameter(p,'tail','both',@(s)ischar(s)||isstring(s));
 addParameter(p,'alpha_cf',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
@@ -416,17 +299,17 @@ tail     = lower(string(p.Results.tail));
 alpha_cf = p.Results.alpha_cf;
 nPerm    = p.Results.nPerm;
 
-% Keep time bins with enough finite data in both groups
+% bookeeping
 nA_t = sum(isfinite(A),1);
 nB_t = sum(isfinite(B),1);
 keep = (nA_t >= 2) & (nB_t >= 2);
 A = A(:,keep);  B = B(:,keep);
 [nA,T] = size(A);  nB = size(B,1);
 
-% Observed t, df, and two-sided p (per time)
+% Observed t, df, and two-sided p (per time), the stat 
 [tObs, p2Obs, dfObs] = welch_t(A,B);
 
-% Cluster-forming mask from per-time p-values (not a fixed tcrit)
+% Cluster-forming mask from per-time p-values 
 switch tail
     case "both"
         supra = (p2Obs < alpha_cf);
@@ -452,7 +335,8 @@ for c = 1:numel(obsClusters)
     obsClusters(c).mass = massfun(tForMass(seg));
 end
 
-% Permutation: shuffle whole trajectories; recompute t, df, p each time
+% Permutation: shuffle whole decoding trajecotries; recompute our
+% statistics each time 
 X = [A; B]; nTot = size(X,1);
 maxMass0 = zeros(nPerm,1);
 for pidx = 1:nPerm
@@ -486,7 +370,7 @@ for c = 1:numel(obsClusters)
     end
 end
 
-% Pack back into full-length vectors (in case some bins were dropped)
+% Pack back into output 
 fullT = false(1, numel(keep)); fullT(keep) = true;
 out.t        = nan(1, numel(keep)); out.t(keep) = tObs;
 out.p_unc    = nan(1, numel(keep)); out.p_unc(keep) = p2Obs;
@@ -494,6 +378,7 @@ out.sig_mask = false(1, numel(keep)); out.sig_mask(keep) = sig_mask;
 out.clusters = obsClusters;
 out.maxMass0 = maxMass0;
 out.info     = struct('tail',tail,'alpha_cf',alpha_cf,'nPerm',nPerm,'nA',nA,'nB',nB,'T',T,'keptMask',fullT);
+
 end
 
 function [t, p2, df] = welch_t(A,B)
@@ -524,7 +409,7 @@ if isempty(idx), return; end
 splits = [1, find(diff(idx) > 1) + 1, numel(idx)+1];
 for s = 1:numel(splits)-1
     seg = idx(splits(s):splits(s+1)-1);
-    clusters(end+1).start = seg(1); %#ok<AGROW>
+    clusters(end+1).start = seg(1); 
     clusters(end).end     = seg(end);
 end
 end
@@ -673,27 +558,6 @@ function shade_sig_ax(ax, tCenters, mask, colorRGB, alphaVal)
     uistack(findobj(ax,'Type','patch'),'bottom');
 end
 
-function shade_sig_signed_ax(ax, tCenters, mask, tvals, colorPos, colorNeg, alphaVal)
-% Same as above, but color reflects direction (A>B vs B>A)
-    if isempty(mask) || ~any(mask), return; end
-    edges = bin_edges_from_centers(tCenters);
-    segs  = logical_mask_to_segments(mask);
-
-    yl = ylim(ax);
-    y0 = yl(1); y1 = yl(2);
-
-    for s = 1:size(segs,1)
-        idx = segs(s,1):segs(s,2);
-        useCol = colorPos;
-        if mean(tvals(idx),'omitnan') < 0, useCol = colorNeg; end
-        x0 = edges(idx(1)); x1 = edges(idx(end)+1);
-        patch('Parent',ax, ...
-              'XData',[x0 x1 x1 x0], 'YData',[y0 y0 y1 y1], ...
-              'FaceColor', useCol, 'FaceAlpha', alphaVal, 'EdgeColor','none');
-    end
-    uistack(findobj(ax,'Type','patch'),'bottom');
-end
-
 
 function edges = bin_edges_from_centers(c)
 % Convert center times to edges (works for non-uniform spacing)
@@ -715,7 +579,7 @@ if isempty(idx), return; end
 brks = [1, find(diff(idx) > 1)+1, numel(idx)+1];
 for b = 1:numel(brks)-1
     seg = idx(brks(b):brks(b+1)-1);
-    segs(end+1,:) = [seg(1) seg(end)]; %#ok<AGROW>
+    segs(end+1,:) = [seg(1) seg(end)]; 
 end
 end
 
