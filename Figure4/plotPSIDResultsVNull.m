@@ -18,18 +18,18 @@ set(0,'defaultAxesFontSize', 18); % bc im blind
 
 
 % define the dataset you are running
-subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
+%subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
 popSize = '50'; % nCells
 nIterations = 25; % pseduopopulations
 outcomeMetric = 'CC'; % vs R2 vs RSME etc
-saveFlag = true; 
+saveFlag = false; 
 statsPrint = false; 
 
-resultsDir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure3/matFiles';
+resultsDir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matfiles';
 
 %% define the dataset you are running
-decodingResults = load([resultsDir '/decodingResults.mat' ]); %true results 
-decodingShuffleResults =  load([resultsDir '/decodingNullResults.mat']);
+decodingResults = load([resultsDir '/Fig4AResults.mat' ]); %true results 
+decodingShuffleResults =  load([resultsDir '/Fig4ANullResults.mat']);
 
 regionList = fieldnames(decodingResults.resultsOut.combined)';
 
@@ -39,7 +39,7 @@ statesBhvRelv = [2 3 4 8 10 12 20]; %  N1 gridsearch
 additionalStates = [2 4 8 10]; % ** this is NOT Nx (Nx = statesBhvRelv + additional) **
 horizonValues = [5 10 15  ];  % i gridsearch 
 nz = 5;                       % bhvDims predicted      
-taxis = -0.5:0.05:1.5; % didnt save in results file, ugh
+taxis = -0.5:0.05:1.5;         % time axis; didnt save in results file, ugh
 
 % region colormap
 regionCmap = [0.4940 0.1840 0.5560	
@@ -133,7 +133,7 @@ end
 % Convenience handles
 allNullIter = allShuffled;     % nBhvs x nIter x nRegions
 
-% ------------- (A) Within-region: observed > null -------------
+%% ------------- (A) Within-region: observed decoding > null -------------
 p_within   = nan(nBhvs, nRegions);
 z_within   = nan(nBhvs, nRegions);
 r_within   = nan(nBhvs, nRegions);  % 
@@ -179,8 +179,8 @@ for rr = 1:nRegions
     end
 end
 
-% FDR across all within-region tests (bhv x region)
-alpha = 0.05;
+%% FDR across all within-region tests (bhv x region)
+alpha = 0.01;
 p_within_fdr = reshape(bh_fdr_vec(p_within(:), alpha), size(p_within));
 sig_within   = p_within_fdr < alpha;
 
@@ -277,7 +277,7 @@ end
 plot_decoding_bars_with_sig(allDecodingMean, allDecodingErr, ...
     allShuffledMean, allShuffledErr, ...
     regionList, regionCmap, outcomeMetric, decodingStats, ...
-    'Alpha', 0.05, 'MaxPairsPerGroup', 3, 'YLim', [0 0.8]);
+    'Alpha', 0.01, 'MaxPairsPerGroup', 3, 'YLim', [0 0.8]);
 
 %% plot all decoding Mean (without stats, Fig 4A) 
 figure;
@@ -322,7 +322,7 @@ title('Kinematic Decoding Performance');
 %% Fig 4B ; plot single iteration result (predicted vs actual face PC) 
 [~, iter2plot] = max(decodingAcc,[],2); ii = mode(iter2plot);
 
-for rr = 1:length(regionList) 
+for rr = length(regionList) 
     
     theseResults = decodingResults.resultsOut.combined.(regionList{rr});
 

@@ -1,5 +1,5 @@
 
-%%%%%%%% PLOTTING Figure S3A, S3B
+%%%%%%%% PLOTTING Figure S4A, S4B
 %%%%%%%%  Euclidean distances between gesture-specific neural trajectories  
 %%%%%%%%
 %%%%%%%  Inter-gesture neural trajectory distances were first averaged across all pairs (Threat-Lipsmack, Threat-Chew, Lipsmack-Chew) for each day. 
@@ -17,10 +17,8 @@
 % written GRI 250911
 
 clear all; close all; 
-% dates2analyze = {'Barney_210704', 'Barney_210706', 'Barney_210805',...
-%     'Thor_171005','Thor_171010','Thor_171027','Thor_171128'};
 
-data = load('MatFiles/euclideanDistances_All_0.02.mat');
+data = load('matfiles/euclideanDistances_All_0.02.mat');
 regions = {'S1','M1','PMv','M3','All'};
 
 allDataOut_days = data.allDataOut_days;
@@ -94,13 +92,11 @@ function summary = summarize_distance_across_days(allDataOut_days, shuffleStats_
 %   .curvesPerDay   [T x D] observed curves at aligned dim
 %   .meanCurve      [T x 1]
 %   .sdCurve        [T x 1]
-%   .semCurve       [T x 1] (NaN-safe; uses per-time valid N)
+%   .semCurve       [T x 1] 
 %   .ci95           [T x 2] (row-wise percentiles, NaN-safe)
 %   .p_fisher       [T x 1] Fisher-combined p across days
 %   .p_fisher_fdr   [T x 1] BH-FDR adjusted across time
 %   .sig_fisher     [T x 1] logical (p_fisher_fdr < AlphaFDR)
-%   .z_stouffer     [T x 1] Stouffer Z across days (one-sided)
-%   .p_stouffer     [T x 1] one-sided p from Stouffer Z
 %   .p_stouffer_fdr [T x 1] BH-FDR adjusted
 %   .sig_stouffer   [T x 1] logical (p_stouffer_fdr < AlphaFDR)
 %   .prop_sig_day   [T x 1] fraction of days significant (per-day FDR)
@@ -112,7 +108,7 @@ function summary = summarize_distance_across_days(allDataOut_days, shuffleStats_
 p = inputParser;
 p.FunctionName = mfilename;
 
-defaultPairs    = {'ThrVCh','ThrVLS','LSVCh','Average'};
+defaultPairs    = {'ThrVCh','ThrVLS','LSVCh','Average'}; % trajectory comparisons 
 defaultUseMax   = true;
 defaultDimIdx   = [];
 defaultAlphaFDR = 0.05;
@@ -151,7 +147,7 @@ summary = struct();
 for rr = 1:numel(regions)
     rlab = regions{rr};
 
-    % Choose aligned PCA dim across days
+    % Choose aligned PCA dim across days (fair comparisons) 
     if UseMaxDim
         dd_days = nan(D,1);
         for d = 1:D
@@ -162,19 +158,17 @@ for rr = 1:numel(regions)
         dd_used = min(dd_days(~isnan(dd_days)));
         if isempty(dd_used) || dd_used < 1, dd_used = 1; end
     else
-        if isempty(DimIdx), error('DimIdx must be set when UseMaxDim=false.'); end
-        dd_used = DimIdx;
     end
 
     % --------- Per pair aggregation ----------
     for pi = 1:numel(Pairs)
-        pairName = Pairs{pi};                 % e.g., 'ThrVCh' or 'Average'
-        fieldName = ['distance' pairName];    % matches your struct
+        pairName = Pairs{pi};                 % e.g., 'ThrVCh'
+        fieldName = ['distance' pairName];    
 
         curves       = nan(T, D);
         perDay_p     = nan(T, D);
         perDay_sig   = false(T, D);
-        allNullCols  = []; % concatenated nulls across days (for context band)
+        allNullCols  = []; % concatenated nulls across days 
 
         for d = 1:D
             % Observed curve at aligned dim
@@ -186,7 +180,7 @@ for rr = 1:numel(regions)
                 end
             end
 
-            % Per-day p and FDR sig mask (if present)
+            % Per-day p and FDR sig mask 
             if isfield(shuffleStats_days{d}, rlab) && isfield(shuffleStats_days{d}.(rlab), pairName)
                 st = shuffleStats_days{d}.(rlab).(pairName);
                 if isfield(st,'p'),       perDay_p(:,d)   = st.p(:); end
@@ -197,7 +191,7 @@ for rr = 1:numel(regions)
             if isfield(shuffleNull_days{d}, rlab) && isfield(shuffleNull_days{d}.(rlab), pairName)
                 nullMat_d = shuffleNull_days{d}.(rlab).(pairName); % [T x nShuf_d]
                 if ~isempty(nullMat_d)
-                    allNullCols = [allNullCols, nullMat_d]; %#ok<AGROW>
+                    allNullCols = [allNullCols, nullMat_d]; 
                 end
             end
         end
@@ -208,7 +202,7 @@ for rr = 1:numel(regions)
         N_t       = sum(isfinite(curves), 2);
         semCurve  = sdCurve ./ max(N_t,1).^.5;
 
-        % Row-wise 2.5/97.5 percentiles (NaN-safe)
+        % Row-wise 2.5/97.5 percentiles (null envelope) 
         ci95 = rowwise_prctile_nan(curves, [2.5 97.5]);
 
         % --------- Combine p-values across days per time bin ---------
@@ -279,21 +273,8 @@ function plot_distance_summary(summary, regionLabels, tAxis, varargin)
 %   'ShowNullBand'  : true/false (default true)  — aggregated null 2.5–97.5%
 %   'ShowSEM'       : true/false (default true)  — mean ± SEM band
 %   'ShowPerDay'    : true/false (default false) — per-day spaghetti lines
-%   'PerDayAlpha'   : 0–1 (default 0.35) — amount to lighten per-day lines toward white
-%   'LinkYAcross'   : true/false (default true)
-%   'YLabel'        : text (default 'Distance')
-%   'XLabel'        : text (default 'Time')
 %   'TitlePrefix'   : text (default '')
-%   'RegionColors'  : [R x 3] colormap in 0–1 (default = MATLAB lines colormap)
-%
-% Example:
-%   colorMap = [0.4940 0.1840 0.5560
-%               0.6350 0.0780 0.1840
-%               0.8500 0.3250 0.0980
-%               0.9290 0.6940 0.1250];
-%   plot_distance_summary(summary, {'M1','S1','PMv','M3','M2'}, taxis2take, ...
-%       'Pairs',{'ThrVCh','ThrVLS','LSVCh','Average'}, ...
-%       'RegionColors', colorMap, 'ShowPerDay', true);
+%   'RegionColors'  : [R x 3] colormap for gestures 
 
 % ---------------- options ----------------
 ip = inputParser; ip.FunctionName = mfilename;
@@ -403,26 +384,21 @@ end
 end
 
 function plot_average_distance_overlay(summary, regionLabels, tAxis, varargin)
-% Overlay the "Average" distance for each region:
+% Overlay the "Average" Euclidean distance for each region:
 %   - thick mean line (region color)
 %   - shaded ±2 SEM (same color, translucent)
 %   - shaded null band (2.5–97.5% envelope) in a greyed region color, behind
 %
 % Inputs
 %   summary      : struct from summarize_distance_across_days(...)
-%   regionLabels : cellstr/char/string, e.g., {'M1','S1','PMv','M3','M2'}
-%   tAxis        : [T x 1] time vector
+%   regionLabels : cellstr/char/string, e.g., {'M1','S1','PMv','M3'}
 %
 % Name/Value options
 %   'PairName'        : which pair to plot (default 'Average')
-%   'RegionColors'    : [R x 3] colormap (default = lines)
-%   'MeanLineWidth'   : width for mean lines (default 2.5)
-%   'SEMAlpha'        : face alpha for ±SEM fills (default 0.28)
-%   'NullAlpha'       : face alpha for null band fills (default 0.22)
-%   'LegendLocation'  : legend location (default 'eastoutside')
-%   'YLabel'          : y-axis label (default 'Distance')
-%   'XLabel'          : x-axis label (default 'Time')
-%   'Title'           : title (default 'Average Distance (mean ± 2 SEM) with Null Bands')
+%   'RegionColors'    : [R x 3] colormap 
+%   'MeanLineWidth'   : width for mean lines 
+%   'SEMAlpha'        : face alpha for ±SEM fills 
+%   'NullAlpha'       : face alpha for null band fills 
 
 % ---- options ----
 ip = inputParser; ip.FunctionName = mfilename;
@@ -450,7 +426,7 @@ figTitle       = char(ip.Results.Title);
 regionLabels = normalizeCellStr(regionLabels);
 T = numel(tAxis);
 
-% ---- figure ----
+% ---- plot it ----
 fig=figure('Name','Average Distance Overlay','Color','w');
 fig.Position =  [626 47 1298 774];
 ax = axes; hold(ax,'on');
@@ -462,7 +438,6 @@ for rr = 1:numel(regionLabels)
     S = summary.(rlab).(pairName);
     if isfield(S,'null_prctiles') && ~isempty(S.null_prctiles)
         band = S.null_prctiles;
-        %band = pad_or_trim(band, T);                % safety
         baseCol = get_region_color(rr, RegionColors);
         bandCol = grey_tint(baseCol, 0.65);         % greyed region color
         fill_between(tAxis, band(:,1), band(:,2), bandCol, alphaNull);
@@ -496,7 +471,7 @@ for rr = 1:numel(regionLabels)
     legNames{end+1}   = rlab; %#ok<AGROW>
 end
 
-% cosmetics
+% aesthetics 
 grid(ax,'on');
 xlabel(ax, xlab);
 ylabel(ax, ylab);
@@ -512,7 +487,7 @@ end
 
 
 
-% ==================== helpers (local functions) ====================
+% ==================== helpers (for plotting) ====================
 
 function tf = validatePairs(P)
 % Accept cellstr, string array, char row/matrix
@@ -621,7 +596,6 @@ elseif numel(v) > T
     v = v(1:T);
 end
 end
-
 
 function col = get_region_color(rr, Cmap)
 % Map region index rr -> row in colormap, cycling if needed

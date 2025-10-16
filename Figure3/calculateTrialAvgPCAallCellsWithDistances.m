@@ -19,7 +19,7 @@ clear all; close all;
 set(0,'defaultAxesFontSize',36); set(0, 'DefaultLineLineWidth', 4);
 set(0,'defaultAxesFontWeight','bold')
 
-date = '210805ear';
+date = '210805';
 subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 

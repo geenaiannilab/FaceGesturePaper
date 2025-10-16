@@ -17,7 +17,7 @@ subjects = {'barney','thor'};
 GPIthreshold = 0.5;
 
 %% Load matfiles
-pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/MatFiles/GPIvalues.mat';
+pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/matfiles/GPIvalues.mat';
 load(pathtoData);
 
 %% get the cortical regions per cell 

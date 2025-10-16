@@ -14,7 +14,7 @@ clear all; close all;
 set(0,'defaultAxesFontSize',24)
 
 thisDir = pwd;
-workDir = [thisDir '/MatFiles/'];
+workDir = [thisDir '/matfiles/'];
 tsneResults = load([workDir '/markerTrajectoriesTSNE.mat']);
 load([workDir '/markerTrajectories.mat']);
 scalar = 3000; 

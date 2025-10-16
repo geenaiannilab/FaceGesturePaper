@@ -38,7 +38,6 @@ for dd = 1:numel(dates)
     
     % Quick sanity check:
     s = squeeze(sum(dat.allSpikesAllSubs.binnedSpikes,2));  % trial x cells total counts
-    fprintf('Any silent cells? %d\n', sum(sum(s,1)==0));
 
     spikes = dat.allSpikesAllSubs.binnedSpikes;    % [trials x time x cells]
     labels = dat.allTrials.trialType;
@@ -87,29 +86,6 @@ for dd = 1:numel(dates)
     pvals_days{dd}   = pvals_win;
     regions_days{dd} = regions(:)';
     centers_days{dd} = centersS(:)';
-
-    % ---- Track best example neuron per region (by peak MI_corr across time) ----
-    uR = unique(regions,'stable');
-    for r = 1:numel(uR)
-        ridx = find(strcmp(regions,uR{r}));
-        if isempty(ridx), continue; end
-        [peakVal, localCellIdx] = max(max(MI_corr_win(:,ridx),[],1));
-        cellIdxGlobal = ridx(localCellIdx);
-        
-        % See if we already stored this region or this is better
-        cur = find(strcmp({examples.region}, uR{r}),1);
-        if isempty(cur) || peakVal > max(examples(cur).spikes(:)+0) % hack to force replacement logic
-            % store raw spikes for PSTH example (single cell)
-            examples(strcmp({examples.region}, uR{r})) = []; % remove prior if exists
-            examples(end+1) = struct( ...
-                'region', uR{r}, ...
-                'day',    dayID, ...
-                'cellIdx',cellIdxGlobal, ...
-                'spikes', squeeze(spikes(:,:,cellIdxGlobal)), ... % [trials x time]
-                'labels', labels, ...
-                'binSize', binSize );
-        end
-    end
 end
 
 %% Align time across days (trim to shortest)
@@ -149,6 +125,8 @@ alpha_cluster = alpha_bin;         % cluster-forming per-bin alpha
 [minMask, latencies] = deal(cell(nRegs,1), nan(nRegs,1));
 sigMask_reg = cell(nRegs,1);       % logical mask over time for each region
 
+% do the permutation testing and determine latency by first two contiguous
+% bins above threshold 
 for r = 1:nRegs
     M = MIcorr_reg{r};                   % [time x cells]
     [sigMask, ~, ~] = cluster_perm_time(M, nPerm, alpha_cluster); % returns 1 x nWin logical
@@ -160,60 +138,6 @@ for r = 1:nRegs
 end
 
 %% -------- Plot per-region MI(t) with shaded significance + latency and example PSTH --------
-for r = 1:nRegs
-    M = MIcorr_reg{r};                       % [time x cells]
-    medMI = median(M,2,'omitnan');
-    figure('Name',sprintf('Region %s: MI(t) + PSTH', uRegs{r}),'NumberTitle','off');
-
-    % -- Subplot 1: MI(t) with shaded significant regions --
-    subplot(2,1,1); hold on;
-    plot(timeVec, medMI, 'LineWidth', 2, 'Color', colors(r,:));
-    
-    % shade sig regions
-    mask = sigMask_reg{r};
-    shade_sig_regions(timeVec, medMI, mask, colors(r,:));
-    % latency line
-    if ~isnan(latencies(r))
-        xline(latencies(r), '--k', 'LineWidth', 1.5);
-        text(latencies(r), max(medMI)*1.02, sprintf('Latency = %.0f ms', latencies(r)*1000), ...
-            'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',14);
-    end
-    xlabel('Time (s)'); ylabel('Median MI_{corr} (bits)');
-    title(['Region ' uRegs(r) '/ ' num2str(win_ms) ' ms window, 10 ms step: cluster-permutation p< ', num2str(alpha_cluster)]);
-    grid on;
-
-    % -- Subplot 2: Example PSTH (most informative neuron found across days) --
-    subplot(2,1,2); hold on;
-    exIdx = find(strcmp({examples.region}, uRegs{r}), 1, 'first');
-    if ~isempty(exIdx)
-        plot_example_psth(examples(exIdx).spikes, dat.taxis2take, examples(exIdx).labels, examples(exIdx).binSize);
-        title(sprintf('Example PSTH — %s, cell %d (%s)', examples(exIdx).day, examples(exIdx).cellIdx, uRegs{r}));
-    else
-        text(0.5,0.5,'No example neuron stored for this region','HorizontalAlignment','center');
-        axis off;
-    end
-
-    figure; 
-    plot(timeVec, medMI, 'LineWidth', 2, 'Color', colors(r,:));
-
-    % shade sig regions
-    mask = sigMask_reg{r};
-    shade_sig_regions(timeVec, medMI, mask, colors(r,:));
-    % latency line
-    if ~isnan(latencies(r))
-        xline(latencies(r), '--k', 'LineWidth', 1.5);
-        text(latencies(r), max(medMI)*1.02, sprintf('Latency = %.0f ms', latencies(r)*1000), ...
-            'HorizontalAlignment','left','VerticalAlignment','bottom','FontSize',18);
-    end
-    xlabel('Time (s)'); ylabel('Median MI_{corr} (bits)');
-    xlim([timeVec(1) timeVec(end)])
-    title(['Region ' uRegs{r} ' /' num2str(win_ms) 'ms window, 10ms step: cluster-perm p < ', num2str(alpha_cluster)]);
-
-    grid on;
-
-end
-
-%% 
 fig = figure; 
 for r = 1:nRegs
     M = MIcorr_reg{r};                       % [time x cells]
@@ -310,7 +234,7 @@ function [sigMask, clusterStats, thr] = cluster_perm_time(M, nPerm, alpha_bin)
     zPerm = (permMeans - mu) ./ sig;  % T x nPerm
 
     % cluster-forming threshold (one-sided)
-    thr = norminv(1 - alpha_bin, 0, 1);   % e.g., 1.645 for alpha=0.05
+    thr = norminv(1 - alpha_bin, 0, 1);   %
     binSig = zObs > thr;
 
     % observed cluster masses (sum of z within contiguous supra-threshold bins)
@@ -347,6 +271,8 @@ function clusters = contiguous_clusters(mask)
     clusters = arrayfun(@(a,b) a:b, starts, ends, 'UniformOutput', false);
 end
 
+%% ================== PLOTTING ==================
+
 function idx = first_run(mask, minRun)
 % first index where mask has >= minRun consecutive trues; NaN if none
     clusters = contiguous_clusters(mask);
@@ -372,66 +298,4 @@ function shade_sig_regions(t, y, mask, col)
     uistack(findobj(gca,'Type','line'),'top');
 end
 
-function plot_example_psth(spikes_tr, taxis2take, labels, binSize)
-% spikes_tr: [trials x time] counts
-% labels   : [trials x 1] (non-contiguous ok)
-% binSize  : seconds per bin
-% Plots trial-averaged PSTH per gesture with Gaussian smoothing (σ=50 ms),
-% ±2 SEM shaded bands, and edge-safe "normalized convolution".
-
-    if isempty(spikes_tr), axis off; return; end
-
-    % ---- Gaussian kernel (σ = 50 ms) ----
-    sigma = 0.05;                             % 50 ms
-    half  = max(1, round(5*sigma/binSize));   % 5σ support
-    tker  = -half:half;
-    gk    = exp( - (tker.^2) / (2*(sigma/binSize)^2) );
-    gk    = gk / sum(gk);
-
-    % Precompute edge normalization vector once (same length as time axis)
-    T    = size(spikes_tr,2);
-    normVec = conv(ones(1,T), gk, 'same');    % effective kernel area at each edge
-    normVec = max(normVec, eps);              % avoid divide-by-zero
-
-    u    = unique(labels,'stable');
-    cols = [1 0 0; 0 0 1; 0 0.7 0];           % red, blue, green
-    nC   = min(3, numel(u));
-    hold on;
-
-    for gi = 1:nC
-        mask = (labels == u(gi));
-        if ~any(mask), continue; end
-
-        % Convert to firing rate (Hz) per trial
-        fr_trials = double(spikes_tr(mask,:)) / binSize;   % [nTrials_g x T]
-
-        % ---- Smooth EACH TRIAL with normalized convolution (edge-safe) ----
-        fr_sm = zeros(size(fr_trials));
-        for tr = 1:size(fr_trials,1)
-            y  = conv(fr_trials(tr,:), gk, 'same');
-            fr_sm(tr,:) = y ./ normVec;                    % <-- fixed edges
-        end
-
-        % ---- Mean and SEM across trials ----
-        mu  = mean(fr_sm, 1, 'omitnan');
-        sd  = std( fr_sm, 0, 1, 'omitnan');
-        n   = sum(~isnan(fr_sm), 1);
-        sem = sd ./ max(1, sqrt(n));
-
-        % ---- Plot shaded ±2*SEM band and mean ----
-        c = cols(gi,:);
-        yy_lower = mu - 2*sem;
-        yy_upper = mu + 2*sem;
-
-        patch([taxis2take, fliplr(taxis2take)], ...
-              [yy_lower,    fliplr(yy_upper)], ...
-              c, 'FaceAlpha', 0.15, 'EdgeColor', 'none');
-        plot(taxis2take, mu, 'LineWidth', 2, 'Color', c);
-    end
-
-    xlabel('Time (s)'); ylabel('Firing rate (Hz)');
-    legend(arrayfun(@(x) sprintf('Gesture %s', string(x)), u(1:nC), 'UniformOutput', false), ...
-           'Location','best');
-    grid on;
-end
 

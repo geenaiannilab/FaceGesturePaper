@@ -1,12 +1,13 @@
-%%%%%%% PLOT results of mutual information ('static', so not time resolved)
-%%%%
+%%%%%%%
+%%%%%%% Plot FigS2 = Mutual information distributions by region 
+%%%% written GRI 
+
 clear all ; close all ; 
 set(0,'defaultAxesFontSize',20)
+plotExtended = false; 
 
-baseDir = '~/Dropbox/PhD/SUAInfo/';
-load([baseDir 'MIResults_allDays_500ms.mat']); 
+load('matfiles/MIResults_allDays_500ms.mat'); 
 colorMap = [0.494 0.184 0.556; 0.635 0.078 0.184; 0.85 0.325 0.098; 0.929 0.694 0.125];
-
 
 %% --- POOLED: Bias-corrected MI violin with overlays ---
 
@@ -21,7 +22,7 @@ end
 %% --- Plot Bias-corrected MI by region---
 figure; 
 violinplot(MI_corrPlot_all, regions_all,'facecolor', colorMap);          % returns one object per region
-xticks(1:nRegs); xticklabels(uRegs);l = legend;
+xticks(1:nRegs); xticklabels(uRegs);l = legend; 
 ylabel('Bias-corrected MI (bits)');
 title(['Per-region MI_{corr} (pooled across days)', 'tmin: ' num2str(time2keep(1)) ' , tmax:' num2str(time2keep(2))]);
 axes = gca; axes.FontSize = 28; axes.FontWeight = 'bold';
@@ -31,30 +32,7 @@ if p_corr < 0.05
     results = multcompare(stats_corr,'CType','dunn-sidak','Display','off');
     overlaySig(results);
 end
-
-
-%% --- POOLED: Raw MI violin with overlays ---
-
-% --- Raw MI by region ---
-MI_rawPlot_all = '';
-for rr = 1:length(uRegs) 
-    thisRegion = uRegs{rr};
-    theseCells = strcmp(thisRegion,regions);
-    MI_rawPlot_all{rr} = MI_raw_all(theseCells)';
-end
-
-% --- Plot Raw MI by region---
-figure; 
-violinplot(MI_rawPlot_all, regions_all,'facecolor', colorMap);          % returns one object per region
-xticks(1:nRegs); xticklabels(uRegs);
-ylabel('Raw MI (bits)');
-title(['Per-region MI_raw (pooled across days), tmin: ' num2str(time2keep(1)) ' , tmax:' num2str(time2keep(2))]);
-
-[p_raw,~,stats_raw] = kruskalwallis(MI_raw_all, regions, 'off');
-if p_raw < 0.05
-    results = multcompare(stats_raw,'CType','dunn-sidak','Display','off');
-    overlaySig(results);
-end
+l.String = l.String(1:2);
 
 %% --- POOLED: fraction significant per region ---
 figure('Name','Fraction significant (pooled)','NumberTitle','off');
@@ -68,31 +46,44 @@ title(['Significant neuron fractions per region (pooled) tmin: ' num2str(time2ke
 fprintf('Chi-square (pooled) across regions: χ²(%d) = %.2f, p = %.4f\n', ...
         stats_chi.df, chi2stat, p_chi);
 
+%% --- EXTENDED PLOTTING not in paper 
+if plotExtended
 
-
-%% --- PER-DAY VIEW: fraction significant per region per day ---
-% make a matrix Day x Region of fractions, then heatmap + dot plot
-[uDays,~,idDay] = unique(PerDay.Day,'stable');
-[uRegsDay,~,idReg] = unique(PerDay.Region,'stable');
-F = accumarray([idDay,idReg], PerDay.FracSig, [], @mean, NaN);
-
-figure('Name','Fraction significant per day × region','NumberTitle','off');
-h = heatmap(uRegsDay, uDays, F);
-h.XLabel = 'Region'; h.YLabel = 'Day'; h.Title = 'Frac. significant (p<0.05)';
-colormap(parula); colorbar;
-
-%% Optional: per-day dot plot (one panel)
-figure('Name','Per-day fraction significant (dot plot)','NumberTitle','off'); hold on;
-for r = 1:numel(uRegsDay)
-    fr = PerDay.FracSig(PerDay.Region==uRegsDay(r));
-    ddx = grp2idx(PerDay.Day(PerDay.Region==uRegsDay(r)));
-    scatter(r + 0.05*(ddx - mean(ddx)), fr, 36, colorMap(r,:), 'filled', 'MarkerFaceAlpha', 0.7);
+    %% --- POOLED: Raw MI violin with overlays ---
+    
+    % --- Raw MI by region ---
+    MI_rawPlot_all = '';
+    for rr = 1:length(uRegs) 
+        thisRegion = uRegs{rr};
+        theseCells = strcmp(thisRegion,regions);
+        MI_rawPlot_all{rr} = MI_raw_all(theseCells)';
+    end
+    
+    % --- Plot Raw MI by region---
+    figure; 
+    violinplot(MI_rawPlot_all, regions_all,'facecolor', colorMap);          % returns one object per region
+    xticks(1:nRegs); xticklabels(uRegs);
+    ylabel('Raw MI (bits)');
+    title(['Per-region MI_raw (pooled across days), tmin: ' num2str(time2keep(1)) ' , tmax:' num2str(time2keep(2))]);
+    
+    [p_raw,~,stats_raw] = kruskalwallis(MI_raw_all, regions, 'off');
+    if p_raw < 0.05
+        results = multcompare(stats_raw,'CType','dunn-sidak','Display','off');
+        overlaySig(results);
+    end
+    
+    %% --- PER-DAY VIEW: fraction significant per region per day ---
+    % make a matrix Day x Region of fractions, then heatmap + dot plot
+    [uDays,~,idDay] = unique(PerDay.Day,'stable');
+    [uRegsDay,~,idReg] = unique(PerDay.Region,'stable');
+    F = accumarray([idDay,idReg], PerDay.FracSig, [], @mean, NaN);
+    
+    figure('Name','Fraction significant per day × region','NumberTitle','off');
+    h = heatmap(uRegsDay, uDays, F);
+    h.XLabel = 'Region'; h.YLabel = 'Day'; h.Title = 'Frac. significant (p<0.05)';
+    colormap(parula); colorbar;
+    
 end
-plot(1:numel(uRegsDay), grpstats(PerDay.FracSig, PerDay.Region, 'mean'), 'k-', 'LineWidth', 1.5);
-xlim([0.5, numel(uRegsDay)+0.5]); xticks(1:numel(uRegsDay)); xticklabels(uRegsDay);
-ylabel('Fraction significant (p<0.05)'); title('Per-day fractions by region');
-%set('XTickLabelRotation',20);
-
 
 %% --- Helper function to overlay sig bars ---
 function overlaySig(results)

@@ -16,7 +16,7 @@ clear all; close all
 set(0,'defaultAxesFontSize',24)
 
 %% Load matfiles
-S = load('MatFiles/Fig2E.mat');   
+S = load('matfiles/Fig2E.mat');   
 Stats = S.Stats;
 
 %% --- Config ---

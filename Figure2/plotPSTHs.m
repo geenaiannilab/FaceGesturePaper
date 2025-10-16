@@ -15,6 +15,10 @@ clear all;
 set(0,'defaultAxesFontSize',36);
 set(0,'defaultAxesFontWeight','bold');
 
+% --- Load combined spikes file
+S = load('matfiles/Fig2C.mat');
+nFiles = numel(S.bins2takePerFile);  
+
 win = 0.001; % in sec
 frThresh = 0.1; % in hz
 
@@ -35,12 +39,6 @@ extraBins = length(gaussKern); % extra bins to discard due to conv edges
 tmin = tmin +(extraBins*win);
 tmax = tmax + (extraBins*win);
 edges = -tmin:win:tmax;
-
-
-% --- Load combined spikes file
-S = load('Matfiles/Fig2C.mat');
-
-nFiles = numel(S.bins2takePerFile);  
 
 % loop each cell's PSTH 
 for fileIdx = 1:nFiles

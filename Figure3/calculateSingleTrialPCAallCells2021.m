@@ -15,7 +15,7 @@ subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 
 
-chls = 193:240;
+chls = 33:240;
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 win = 0.02; % in sec
@@ -178,7 +178,7 @@ end
 
 % save results 
 if saveFlag 
-    save('Fig3A_Supp_M3.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
+    save('Fig3A_Supp_AllMotor.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
 end
 
 

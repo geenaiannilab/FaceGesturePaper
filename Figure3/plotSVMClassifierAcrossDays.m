@@ -28,7 +28,7 @@ windowLength = 0.4; windowShiftSize = 0.05;
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
 %% load data 
-data = load('MatFiles/Fig3B.mat');
+data = load('matfiles/Fig3B.mat');
 results = data.results;
 
 %% -------- Cluster-based permutation parameters --------

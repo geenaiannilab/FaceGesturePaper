@@ -1,5 +1,5 @@
 
-%%%%%%%% PLOTTING Figure S5A, S5B 
+%%%%%%%% PLOTTING Figure S6A, S6B 
 %%%%%%%%  Kinematic decoding and non-preserved neural correlations
 %%%%%%%%
 %%%%%%%%  Plots all Spearman's rho values (large for preserved rank-order, small if not) 
@@ -36,7 +36,7 @@ plot_rankorder_by_region(combined, ...
 %plot_rankorder_summary(combined, 'Metric','Spearman', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
 
 % Kendall summary (optional)
-plot_rankorder_summary(combined, 'Metric','Kendall', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
+%plot_rankorder_summary(combined, 'Metric','Kendall', 'Alpha',0.05, 'NBoot',5000, 'ShowPoints',true);
 
 
 function [combined] = summarize_rankorder_results_dirs(dirList, varargin)

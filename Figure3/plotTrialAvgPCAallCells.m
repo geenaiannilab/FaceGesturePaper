@@ -21,7 +21,7 @@ set(0,'defaultAxesFontWeight','bold')
 %% load data 
 %% ============================
 
-fileList = dir(fullfile('MatFiles/Fig3C_AllMotor.mat')); % change depending on which trajectory to plot 
+fileList = dir(fullfile('matfiles/Fig3C_Supp_AllMotor.mat')); % change depending on which trajectory to plot 
 dataFiles = {fileList.name};
 
 for dd = 1:length(dataFiles)

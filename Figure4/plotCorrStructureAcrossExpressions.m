@@ -17,7 +17,7 @@ close all; clear all
 set(0,'defaultAxesFontSize', 24); % bc im blind 
 set(0,'defaultAxesFontWeight', 'bold'); 
 
-workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matFiles/CorrelationMatrices';
+workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matfiles/CorrelationMatrices';
 regions = {'S1','M1','PMv','M3','All'};
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};
@@ -125,8 +125,8 @@ end
 
 
 %% Plot the R^2 values across all days
-%% Fig 4C
-data = load('combinedData_R2_pairwiseNeuralCorrelations.mat');
+%% Fig 4C; (combinedData_R2_pairwiseNeuralCorrelations)
+data = load('matfiles/Fig4C.mat');
 
 combinedData_1v2 = data.combinedData_1v2;
 combinedData_1v3 = data.combinedData_1v3;
