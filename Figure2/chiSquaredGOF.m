@@ -1,12 +1,12 @@
-%% this script with load the ANOVA on FR results 
-%% (which performed a 2-way anova (bhv, time, interaction) on FRs per cell
-%% This will calculate an omnibus statistic (chi-sq) to tell you if 
-%% 1) fraction of significantly modulated cells is same v. different
-%%     between regions
-%%
-%% 2) posthoc tests will tell you which region pairs had different
-%%     fractions of modulated cells 
-
+% %% this script with load the ANOVA on FR results 
+% %% (which performed a 2-way anova (bhv, time, interaction) on FRs per cell
+% %% This will calculate an omnibus statistic (chi-sq) to tell you if 
+% %% 1) fraction of significantly modulated cells is same v. different
+% %%     between regions
+% %%
+% %% 2) posthoc tests will tell you which region pairs had different
+% %%     fractions of modulated cells 
+%%%%%%%%% GRI 09/11/2025 
 
 clear all; 
 subjects = {'barney','thor'};
@@ -223,14 +223,9 @@ function [qvals, sigMask, crit_p, pvec, idx_orig] = bh_fdr_from_cell(p_in, alpha
 %   crit_p   : BH critical p-value (largest p that passes)
 %   pvec     : sorted p-values used internally (column vector, NaNs removed)
 %   idx_orig : indices mapping sorted p-values back to linear indices of p_in
-%
-% Notes:
-% - NaNs are ignored and returned as NaN in qvals, false in sigMask.
-% - Implements the standard BH step-up procedure.
 
     if nargin < 2 || isempty(alpha), alpha = 0.05; end
 
-    % Flatten and coerce to numeric vector; remember NaNs and original layout
     if iscell(p_in)
         p_all = cellfun(@(x) double(x), p_in, 'UniformOutput', true);
     else
@@ -258,11 +253,10 @@ function [qvals, sigMask, crit_p, pvec, idx_orig] = bh_fdr_from_cell(p_in, alpha
 
     % Compute BH q-values (adjusted p)
     q_sorted = (m ./ ranks) .* p_sorted;
-    % Monotone non-increasing from the end, cap at 1
+
     q_sorted = min(1, cummin(q_sorted(end:-1:1)));
     q_sorted = q_sorted(end:-1:1);
 
-    % Restore original (valid) order
     q_vec = nan(size(p_vec));
     q_vec(sort_idx) = q_sorted;
 
@@ -293,50 +287,4 @@ function [qvals, sigMask, crit_p, pvec, idx_orig] = bh_fdr_from_cell(p_in, alpha
     % (linear indices into p_in)
     idx_valid_lin = find(valid);
     idx_orig = idx_valid_lin(sort_idx);
-end
-
-function [qvals, sigMask, crit_p] = bh_fdr_vector(p_in, alpha)
-% bh_fdr_vector  Benjamini–Hochberg FDR for a numeric vector (NaNs allowed).
-% INPUTS: p_in (nx1 or 1xn), alpha (e.g., 0.05).  OUTPUTS: qvals (size p_in),
-% sigMask (logical, same size), crit_p (scalar BH critical p or NaN).
-
-    if nargin < 2 || isempty(alpha), alpha = 0.05; end
-    p_in = p_in(:);
-    valid = isfinite(p_in);
-    p = p_in(valid);
-
-    qvals = nan(size(p_in));
-    sigMask = false(size(p_in));
-    crit_p = NaN;
-
-    if isempty(p), return; end
-
-    [ps, order] = sort(p,'ascend');
-    m = numel(ps);
-    ranks = (1:m)';
-
-    % q-values (BH)
-    q = (m ./ ranks) .* ps;
-    q = min(1, cummin(q(end:-1:1)));
-    q = q(end:-1:1);
-
-    % Discoveries
-    thresh = (ranks / m) * alpha;
-    pass = ps <= thresh;
-    if any(pass)
-        k = find(pass, 1, 'last');
-        crit_p = ps(k);
-        sig_sorted = false(m,1);
-        sig_sorted(1:k) = true;
-    else
-        sig_sorted = false(m,1);
-        crit_p = NaN;
-    end
-
-    % Map back
-    q_back = nan(m,1);         q_back(order) = q;
-    sig_back = false(m,1);     sig_back(order) = sig_sorted;
-
-    qvals(valid) = q_back;
-    sigMask(valid) = sig_back;
 end

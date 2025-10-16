@@ -38,7 +38,7 @@ edges = -tmin:win:tmax;
 
 
 % --- Load combined spikes file
-S = load('Matfiles/combinedSelectedPSTH.mat');
+S = load('Matfiles/Fig2C.mat');
 
 nFiles = numel(S.bins2takePerFile);  
 
