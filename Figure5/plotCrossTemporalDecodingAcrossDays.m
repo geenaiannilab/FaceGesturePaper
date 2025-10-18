@@ -28,7 +28,7 @@ plotIndividualIterations = false;
 binSize = 0.4;
 
 %% load data 
-f2load = dir(['matfiles/CTD*']);
+f2load = dir(['matfiles/Fig5_left.mat']);
 ctdat = load([f2load.folder '/' f2load.name]);
 
 %% channels

@@ -1,11 +1,9 @@
-
-
 %%%%%%%%
 %%%%%%%% PLOTTING Figure 2E,  
 %%%%%%%%  Single-Cell Activity and Selectivity in Cortical Face-Motor Regions
 %%%%%%%%
 %%%%%%%% Plots results of 2-way anova (effect of gesture type, time and
-%%%%%%%% their interaction on firing rate of individual neurons, over all
+%%%%%%%% their interaction on firing rate of individual neurons), over all
 %%%%%%%%  regions. Then use chi-sq to test if there exists differences in
 %%%%%%%%  fractions of significantly modulated cells by region
 %%%%%%%%  Stats are tablular output of chiSquaredGOF.m

@@ -17,7 +17,7 @@ close all; clear all
 set(0,'defaultAxesFontSize', 24); % bc im blind 
 set(0,'defaultAxesFontWeight', 'bold'); 
 
-workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matfiles/CorrelationMatrices';
+workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matfiles/Fig4D';
 regions = {'S1','M1','PMv','M3','All'};
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};

@@ -1,5 +1,15 @@
-%% updated July 2023 
-%% generates trial-averaged, and individual trial behavioral trajectories from DLC markers
+%%%%% Analyzes data for  Figures 1 B-F; 
+%%%%%%% Facial gestures are distinguishable during a naturalistic social paradigm
+%%%%%  Generates trial-averaged, and individual trial behavioral trajectories from DLC markers
+%%%%%%
+%%%%%%%  markerTrajectories.mat contains results of behavioral trajectories
+%%%%%%%         in face-marker space; contained in bhvTraj structure
+%%%%%%%         (nTimepoints x nTrials x nPCs)
+%%%%%%%  markerTrajectoriesTSNE.mat contains dimensionality-reduced
+%%%%%%%         results (tsneResults.Y is nTimepoints x nDims) 
+%%%%% 
+%%%%%%%%%
+%%%%%%%%% GRI 09/11/2025 
 
 close all; clear all;
 set(0,'defaultAxesFontSize',24);

@@ -1,4 +1,4 @@
-%%%%%%%  Creates Figure 2B 
+%%%%%%%  Creates data in Figure 2B 
 %%%%%%%%  Single-Cell Activity and Selectivity in Cortical Face-Motor Regions
 %%%%%%%%
 %%%%%%%% Sample population activity of all simultaneously recorded cells 

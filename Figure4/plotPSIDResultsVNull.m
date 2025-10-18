@@ -18,7 +18,6 @@ set(0,'defaultAxesFontSize', 18); % bc im blind
 
 
 % define the dataset you are running
-%subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
 popSize = '50'; % nCells
 nIterations = 25; % pseduopopulations
 outcomeMetric = 'CC'; % vs R2 vs RSME etc
@@ -364,7 +363,7 @@ for rr = length(regionList)
     sgtitle([regionList{rr} 'Iter = ' num2str(ii)],'FontSize',36,'FontWeight','bold')
 end
 
-%% not included in paper:
+%% NOT included in paper:
 %% for each region, plot the decoding accuracy of the NEURAL data ('allNeuralSelf')
 %% for both the full model (two stage, behaviorally relevant + irrelevant dynamics) 
 %% and for the limited model (1 stage, behaviorally relevant only) 

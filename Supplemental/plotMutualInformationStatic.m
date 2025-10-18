@@ -1,12 +1,22 @@
 %%%%%%%
-%%%%%%% Plot FigS2 = Mutual information distributions by region 
+%%%%%%% Plot Figure S2
+%%%%%%  Mutual information distributions by region 
+%%%%%%  Imported data includes MI_corr_all which is bias corrected mutual
+%%%%%%      information (see Methods), one value per region, and regions_all
+%%%%%%      which is cortical region label 
+%%%%%%  MI Computed between each neuron's spike counts and gesture (trial type) using empirical joint probability distributions.
+%%%%%%  Data reflect the analysis window tmin = -500 ms to tmax = +500 ms.
+%%%%%%
+%%%%%   Also includes fracSig, which is fraction of neurons per region
+%%%%%       whose p-value (for MIc being significant > null) was < 0.05
 %%%% written GRI 
+
 
 clear all ; close all ; 
 set(0,'defaultAxesFontSize',20)
 plotExtended = false; 
 
-load('matfiles/MIResults_allDays_500ms.mat'); 
+load('matfiles/FigS2.mat'); 
 colorMap = [0.494 0.184 0.556; 0.635 0.078 0.184; 0.85 0.325 0.098; 0.929 0.694 0.125];
 
 %% --- POOLED: Bias-corrected MI violin with overlays ---

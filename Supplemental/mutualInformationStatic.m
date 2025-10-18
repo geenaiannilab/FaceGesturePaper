@@ -1,12 +1,16 @@
-% %% Simulate
-% %rng(42);
-% Blue bars = shuffle-corrected MI for each neuron.
-% 
-% Black error bars = 
-% raw MI ± 1 SD of shuffle distribution.
-% 
-% Red crosses = 
-% mean of the shuffle distribution (bias estimate).
+ 
+%%%% Calculuate MI for FigS2 = Mutual information distributions by region
+% % Calculuates bias-corrected mutual information (MI_corr) pooled across recording days.
+% % Computed between each neuron s spike counts and gesture (trial type) using empirical joint probability distributions.
+% %
+% % Data reflect the analysis window tmin = -500 ms to tmax = +500 ms. 
+% % Regional differences were assessed with a Kruskal–Wallis test; when significant (p < 0.05), post-hoc pairwise comparisons used Dunn–Šidák correction; ** = p < 0.01, * = p < 0.05.  
+% %
+% % To safeguard against tendency for empirical estimates of MI to be biased upward, randomly shuffle trial labels 10k times per neuron to generate a null distribution of MI values. 
+% % Bias-corrected MIc  defined as the observed MI - mean shuffle MI. 
+% % Statistical significance  assessed per neuron by comparing the observed MI to its shuffle distribution, with p-values estimated as the fraction of shuffle values exceeding the observed MI (p < α=0.05). 
+% written GRI 
+
 clear all ; close all 
 
 %% Setup
@@ -88,7 +92,7 @@ nRegs   = numel(uRegs);
 % fraction significant per region (pooled)
 isSig   = (pvals_all < 0.05);
 fracSig = zeros(nRegs,1);
-counts  = zeros(nRegs,2); % [#sig, #nonsig]
+counts  = zeros(nRegs,2); % 
 for i = 1:nRegs
     idx = strcmp(regions, uRegs{i});
     nSig = sum(isSig(idx));

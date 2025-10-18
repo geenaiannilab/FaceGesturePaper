@@ -40,12 +40,6 @@ for dd = 1:length(dataFiles)
     score = data.allDataOut.(regionLabel).score;
     maxDim = data.allDataOut.(regionLabel).nDimGreater90;
 
-    %% eigenvalues
-    f1 = figure; set(f1, 'Position',[476 92 1022 774]);
-    plot(cumsum(latent/sum(latent)), 'ok','MarkerFaceColor','k')
-    xlabel('PC'); ylabel('% variance'); xlim([0 80]);
-    title(['Region" ' regionLabel ', Cumulative Variance Explained']);
-
     %% visualize each PC, for each bhv
     f2 = figure; set(f2, 'Position',[476 92 1022 774]);
     sgtitle(['Region : ' regionLabel],'FontSize',36)
@@ -81,7 +75,7 @@ for dd = 1:length(dataFiles)
     title(['Region: ' regionLabel ' Facial Gesture Neural Trajectories']);
     legend('Threat','Lipsmack','Chew')
     grid on; axes = gca; axes.LineWidth = 3; axes.GridLineStyle = ':';
-%     exportgraphics(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
+%%     exportgraphics(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
 %     savefig(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.fig']);
 
 end

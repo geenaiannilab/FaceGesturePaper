@@ -133,32 +133,4 @@ legend('Thr','LS', 'Chew'); xlabel('Time, s'); ylabel('a.u.')
 sgtitle(['FaceMotion PCs; tmin = ' num2str(tmin) ' tmax = ' num2str(tmax)],'FontSize',24)
 
 
-%% plot per trial PCs 
-% for bhv = 1:length(bhvs2plot)
-%     fig = figure('Position', get(0, 'Screensize')); 
-% 
-%     trials = size(bhvTraj(bhv).data,2);
-%     
-%     for PC = 1:3
-%     subplot(2,3,PC)
-% 
-%         for tt = 1:trials
-%             markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
-%             plot(taxis, markerPos,'Color',colors(bhvs2plot(bhv))); hold on
-%         end 
-%         hold off ; ax = gca; ax.YAxis.Visible = 'off';
-%         title(['Per Trial PC=' num2str(PC)],'FontSize',20)
-% 
-%         subplot(2,3,PC+3)
-%         for tt = 1:trials
-%             markerPos = squeeze(bhvTraj(bhv).data(:,tt,PC));
-%             markerVel = diff(markerPos) ./ diff(taxis);
-%             plot(taxis(1:end-1), markerVel,'Color',colors(bhvs2plot(bhv))); hold on ;
-%         end
-%         hold off; ax = gca; ax.YAxis.Visible = 'off';
-%         title(['MarkerVelocity, PC=' num2str(PC)],'FontSize',20)
-% 
-%     end
-%     sgtitle(['Bhv = ' gestureNames{bhv}],'FontSize',30);
-% end
-% 
+

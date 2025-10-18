@@ -22,7 +22,7 @@ binSize = 0.4;
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
 %% load data 
-f2load = dir('matfiles/CTD*');
+f2load = dir('matfiles/Fig5_left.mat');
 ctdat = load([f2load.folder '/' f2load.name]);
 
 %% Create timebase, channels 

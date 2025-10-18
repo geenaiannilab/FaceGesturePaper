@@ -17,7 +17,7 @@ subjects = {'barney','thor'};
 GPIthreshold = 0.5;
 
 %% Load matfiles
-pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/matfiles/GPIvalues.mat';
+pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/matfiles/Fig2D_GPIvalues.mat';
 load(pathtoData);
 
 %% get the cortical regions per cell 
@@ -44,12 +44,11 @@ for ss = 1:length(subjects)
     clear cortRegion; clear GPI; clear meanFRs;
 end
 
-% run 1 way anova for effect of cortical region on GPI 
+%% run 1 way anova for effect of cortical region on GPI 
 % and run post-hoc tests 
 [P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(GPIout, cortRegionOut,'off');
-[c_oneway,m_oneway] = multcompare(STATS_oneway);
 
-% report it 
+%% report it 
 F = ANOVATAB_oneway{2,5};
 df_between = ANOVATAB_oneway{2,3};
 df_within = ANOVATAB_oneway{3,3};
@@ -57,15 +56,15 @@ p = ANOVATAB_oneway{2,6};
 disp('Effect of cortical region on GPI (One way ANOVA):')
 disp(['F(' num2str(df_between) ',' num2str(df_within) ') = ' num2str(F) ', p = ' num2str(p)]);
 
-% run 2 way anova for effect of cortical region and gesture type on meanFRs 
+%% run 2 way anova for effect of cortical region and gesture type on meanFRs 
 inputFR = [meanFRsOut(:,1) ; meanFRsOut(:,2); meanFRsOut(:,3)];
 T    = cell(1, size(meanFRsOut,1)); T(:) = {'Threat'}; L = cell(1, size(meanFRsOut,1)); L(:) = {'Lipsmack'}; C = cell(1, size(meanFRsOut,1)); C(:) = {'Chew'};
 inputExp = [T'; L'; C'];
 inputCortRegion = [cortRegionOut ; cortRegionOut; cortRegionOut];
-[P_twoway,TABLE_twoway,STATS_twoway] = anovan(inputFR,{inputExp inputCortRegion},'model','interaction','varnames',{'inputExp','inputCortRegion'});
-[c_twoway,m_twoway, ~, names] = multcompare(STATS_twoway,'Dimension', [1 2]);
+[P_twoway,TABLE_twoway,STATS_twoway] = anovan(inputFR,{inputExp inputCortRegion},'model','interaction','varnames',{'inputExp','inputCortRegion'},'display','off');
+%[c_twoway,m_twoway, ~, names] = multcompare(STATS_twoway,'Dimension', [1 2]);
 
-% report it 
+%% report it 
 get_row = @(name) find(strcmp(TABLE_twoway(2:end,1), name)) + 1;  % +1 to offset header
 
 row_gesture     = get_row('inputExp');
