@@ -1,5 +1,8 @@
 % written GI
 %%%
+%%%%%%%%  analyzing kinematic decoding and non-preserved neural correlations
+%%%%%%%%   for Figure 4C, D
+
 % PUPRPOSE: compute the 1) correlation between all neuron pairs over time (trial-averaged)
 %%%                            cluster & sort neurons based on
 %%%                            similarity of correlational values
@@ -7,7 +10,7 @@
 %%%                             triangle) 
 %%%                     3) save the sorted and unsorted correlation
 %%%                             matrices for plotting 
-
+%%%%%%%%% GRI 09/11/2025 
 
 
 clear all; close all;

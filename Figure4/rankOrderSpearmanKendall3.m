@@ -8,7 +8,7 @@ function out = rankOrderSpearmanKendall3(R1,R2,R3,varargin)
 %  out = rankOrderSpearmanKendall3(R1,R2,R3,'NPerm',10000,'NBoot',2000,'Tail','both','Seed',123,'UseDiag',false)
 %
 % Output fields:
-%  .pairs         {'R1-R2','R1-R3','R2-R3'}
+%  .pairs         {'R1-R2','R1-R3','R2-R3'}, gesture comparisons 
 %  .spearman.r    [3x1], .spearman.p [3x1], .spearman.CI [2x3], .spearman.null {3x1}
 %  .kendall.tau   [3x1], .kendall.p  [3x1], .kendall.CI  [2x3], .kendall.null  {3x1}
 %  .idxUpper      logical mask used

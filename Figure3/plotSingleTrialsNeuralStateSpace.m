@@ -11,8 +11,13 @@
 %%%%%% 
 % written GRI 250911
 
-clear all ; 
-data = load('matfiles/Fig3A_Supp_AllMotor.mat'); % change input file to examine plots from Supplementary Figures
+clear all; close all;
+set(0,'defaultAxesFontSize',36)
+set(0,'defaultAxesFontWeight','bold')
+
+data = load('matfiles/Fig3A.mat'); % change input file to examine plots from Supplementary Figures
+thisRegion = 'All';
+
 sqrtFlag = 0;
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
 centerNormalizeFlag = 1; % normalize cells/variables by their variance in addition to mean-centering (PCA on correlation matrix)    
@@ -26,7 +31,7 @@ taxis = data.ax;
 % Input is nTrials x nCells , 
 %    where each entry is # of spikes within a trial
 %  Each point in state-space is a TRIAL 
-
+%%
 if centerOnlyFlag
      [coeff,score,latent, ~] = pca(allCellsPerTrialSpikeCount); % centering (subtract column/cell means) done automatically by pca()
      neuralInput = allCellsPerTrialSpikeCount - mean(allCellsPerTrialSpikeCount); %for plotting only, later
@@ -55,58 +60,32 @@ title('Cumulative Variance Explained');
 % plot perTrial data projected onto first 3 PCs 
 %%
 [~,~,id] = unique(allTrials.trialType);
-colors = 'rbgck';
 markers = 'osd*.';
-plotFig = figure; plotFig.Position = [476    92   946   774];
+cols = [1, 0 0 ;   
+        0, 0, 1;   
+        0, 1, 0];      
 
-for idx = 1:length(unique(allTrials.trialType))'
-    dat2plot = score(allTrials.trialType == bhvs2plot(idx),:);
-    scat(idx) = scatter3(dat2plot(:,1), dat2plot(:,2), dat2plot(:,3), 500, [colors(idx) markers(idx)], 'filled',...
-        'MarkerFaceAlpha', 0.5,'MarkerEdgeColor',colors(idx),'linew',2);
-    hold on;
+blendFactor = 0.5;  % 0 = vivid, 1 = pure white
+muted = cols * (1 - blendFactor) + blendFactor * ones(3,3);
+
+plotFig = figure; 
+plotFig.Position = [476 92 946 774];
+hold on
+
+bhvs2plot = unique(allTrials.trialType);  % or specify your desired order
+for idx = 1:length(bhvs2plot)
+    dat2plot = score(allTrials.trialType == bhvs2plot(idx), :);
+    scat(idx) = scatter3(dat2plot(:,1), dat2plot(:,2), dat2plot(:,3), ...
+        500, muted(idx,:), markers(idx), 'filled', ...
+        'MarkerFaceAlpha', 0.5, 'MarkerEdgeColor', cols(idx,:), 'LineWidth', 2);
 end
+
 xlabel('Neural PC1')
 ylabel('Neural PC2')
 zlabel('Neural PC3')
-title(['Single Trials of Facial Gesture ']); 
-legend('Threat','Lipsmack','Chew')
-
-% % figure; imagesc(allCellsPerTrialSpikeCount'); colormap(jet); ylabel('cell'); xlabel('trial#'); 
-% % colorbar;
-% % xticks(1:length(allTrials.trialType));
-% % xticklabels(allTrials.trialType);
-% % yticks(1:size(allCellsPerTrialSpikeCount,2));
-% % yticklabels(spikeLabels);
-% % title('spikes PER trial, per Cell ')
-% % 
-% % 
-% % figure; imagesc(neuralInput'); colormap(jet); ylabel('cell'); xlabel('trial#'); 
-% % colorbar;
-% % xticks(1:length(allTrials.trialType));
-% % xticklabels(allTrials.trialType);
-% % yticks(1:size(allCellsPerTrialSpikeCount,2));
-% % yticklabels(spikeLabels);
-% % title('spikes PER trial per cell, PREPROC INPUT ')
-% % 
-% % % % plot FR vs loadings to see if highFR neurons determine own PCs
-% % figure;
-% % subplot(1,2,1); plot(bin.meanFRs(bin.meanFRs >= threshlowFR), coeff(:,1), 'o'); grid; xlabel('meanFR'); ylabel('loadings on PC1')
-% % [rho1, pval1] = corr(bin.meanFRs(bin.meanFRs >= threshlowFR)', coeff(:,1));
-% % subplot(1,2,2); plot(bin.meanFRs(bin.meanFRs >= threshlowFR), coeff(:,2), 'o'); grid; xlabel('meanFR'); ylabel('loadings on PC2')
-% % [rho2, pval2] = corr(bin.meanFRs(bin.meanFRs >= threshlowFR)', coeff(:,2));
-% % sgtitle('Mean FRs vs. loadings on PC1, PC2')
-% % 
-% 
-% % loadings of each neuron on each PC
-%  figure; imagesc(coeff(:,1:5));  colorbar; colormap(bluewhitered)
-%  ax = gca; 
-%  ax.FontSize = 10;
-%  yticks(1:size(allCellsPerTrialSpikeCount,2));
-%  yticklabels(data.spikeLabels2plot);
-%  xticks(1:5)
-%  xlabel('PC','FontSize',18); ylabel('Cell ID','FontSize',18);
-%  title('PC Loadings are Distributed Across Cells','FontSize',22)
-% 
+title([thisRegion ': Single Trials of Facial Gesture']); hold off
+legend({'Threat','Lipsmack','Chew'})
+view(3); grid on; 
 
 ax = gca;
 set(ax, 'CameraPosition',  [-84.9252  76.9082  48.6309], ...
@@ -120,3 +99,6 @@ set(ax, 'CameraPositionMode','auto', ...
         'CameraViewAngleMode','auto');
 
 rotate3d(ax, 'on');     
+% %plotFig = gcf;
+%fileOut = ['/Users/geena/Dropbox/PhD/Manuscript/ScienceSubmission/ScienceRevision/ScienceResubmissionFigures/Fig3A_' thisRegion '.pdf'];
+%exportgraphics(plotFig, fileOut, 'ContentType', 'vector');

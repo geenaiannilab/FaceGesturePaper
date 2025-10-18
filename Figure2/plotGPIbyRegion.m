@@ -44,17 +44,20 @@ for ss = 1:length(subjects)
     clear cortRegion; clear GPI; clear meanFRs;
 end
 
-% run 1 way anova for effect of cortical region on FEP 
+% run 1 way anova for effect of cortical region on GPI 
 % and run post-hoc tests 
 [P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(GPIout, cortRegionOut,'off');
 [c_oneway,m_oneway] = multcompare(STATS_oneway);
 
+% report it 
+F = ANOVATAB_oneway{2,5};
+df_between = ANOVATAB_oneway{2,3};
+df_within = ANOVATAB_oneway{3,3};
+p = ANOVATAB_oneway{2,6};
 disp('Effect of cortical region on GPI (One way ANOVA):')
-print_anova_APA(ANOVATAB_oneway, 'FactorLabels', struct('A','Cortical region'));
+disp(['F(' num2str(df_between) ',' num2str(df_within) ') = ' num2str(F) ', p = ' num2str(p)]);
 
-% run 2 way anova for effect of cortical region, expresison type, on mean
-% FR & run post-hoc tests
-
+% run 2 way anova for effect of cortical region and gesture type on meanFRs 
 inputFR = [meanFRsOut(:,1) ; meanFRsOut(:,2); meanFRsOut(:,3)];
 T    = cell(1, size(meanFRsOut,1)); T(:) = {'Threat'}; L = cell(1, size(meanFRsOut,1)); L(:) = {'Lipsmack'}; C = cell(1, size(meanFRsOut,1)); C(:) = {'Chew'};
 inputExp = [T'; L'; C'];
@@ -62,8 +65,27 @@ inputCortRegion = [cortRegionOut ; cortRegionOut; cortRegionOut];
 [P_twoway,TABLE_twoway,STATS_twoway] = anovan(inputFR,{inputExp inputCortRegion},'model','interaction','varnames',{'inputExp','inputCortRegion'});
 [c_twoway,m_twoway, ~, names] = multcompare(STATS_twoway,'Dimension', [1 2]);
 
-disp('Effect of cortical region, gesture type, on firing rates (2 way ANOVA):')
-print_anova_APA(TABLE_twoway);
+% report it 
+get_row = @(name) find(strcmp(TABLE_twoway(2:end,1), name)) + 1;  % +1 to offset header
+
+row_gesture     = get_row('inputExp');
+row_region      = get_row('inputCortRegion');
+row_interaction = get_row('inputExp*inputCortRegion');
+row_error       = size(TABLE_twoway,1)-1;   
+df_err = TABLE_twoway{row_error,3};
+
+F_g   = TABLE_twoway{row_gesture,6};     df_g   = TABLE_twoway{row_gesture,3};     p_g   = TABLE_twoway{row_gesture,7};
+F_r   = TABLE_twoway{row_region,6};      df_r   = TABLE_twoway{row_region,3};      p_r   = TABLE_twoway{row_region,7};
+F_int = TABLE_twoway{row_interaction,6}; df_int = TABLE_twoway{row_interaction,3}; p_int = TABLE_twoway{row_interaction,7};
+
+disp('Effect of gesture (Two-way ANOVA):')
+disp(['F(' num2str(df_g) ',' num2str(df_err) ') = ' num2str(F_g,'%.3f') ', p = ' num2str(p_g,'%.3g')])
+
+disp('Effect of cortical region (Two-way ANOVA):')
+disp(['F(' num2str(df_r) ',' num2str(df_err) ') = ' num2str(F_r,'%.3f') ', p = ' num2str(p_r,'%.3g')])
+
+disp('Gesture × region interaction (Two-way ANOVA):')
+disp(['F(' num2str(df_int) ',' num2str(df_err) ') = ' num2str(F_int,'%.3f') ', p = ' num2str(p_int,'%.3g')])
 
 %% just the "selective" cells (GPI > 0.5) 
 selectiveGPI = GPIout >= GPIthreshold;

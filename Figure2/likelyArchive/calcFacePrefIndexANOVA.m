@@ -35,7 +35,7 @@ thorRawData.cortRegion = [thorRawData1.cortRegion thorRawData2.cortRegion thorRa
 
 %% get the cortical regions per cell 
 cortRegionOut = [];
-FEPout = [];
+GPIout = [];
 meanFRsOut = [];
 
 for ss = 1:length(subjects)
@@ -51,7 +51,7 @@ for ss = 1:length(subjects)
     meanFRs = data.meanFRs;
 
     cortRegionOut = [cortRegionOut; cortRegion];
-    FEPout = [FEPout ; FEP];
+    GPIout = [GPIout ; FEP];
     meanFRsOut = [meanFRsOut; meanFRs];
 
     clear cortRegion; clear FEP; clear meanFRs;
@@ -59,8 +59,10 @@ end
 
 % run 1 way anova for effect of cortical region on FEP 
 % and run post-hoc tests 
-[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(FEPout, cortRegionOut,'off');
+[P_oneway,ANOVATAB_oneway,STATS_oneway] = anova1(GPIout, cortRegionOut,'off');
 [c_oneway,m_oneway] = multcompare(STATS_oneway);
+disp('Effect of cortical region on GPI (One way ANOVA):')
+ANOVATAB_oneway
 
 % run 2 way anova for effect of cortical region, expresison type, on mean
 % FR & run post-hoc tests
@@ -279,3 +281,5 @@ function pText = formatP(p)
         pText = regexprep(pText, 'p = 0\.', 'p = .');
     end
 end
+
+

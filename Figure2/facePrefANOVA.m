@@ -1,9 +1,8 @@
-%%
-%% generates 'date_subj_facePrefAnova,.mat' (needs to be run over all days) 
+%% Calculating for  Figure 2E,  
+%% generates '(date_subj_)facePrefAnova,.mat' (needs to be run over all days) 
 % this is a two-way ANOVA to look for effect of gesture, time on individual
 % cell's FR 
-
-%% this data then get loaded by chiSquaredGOF.m to be thresholded, and
+% this data then get loaded by chiSquaredGOF.m to be thresholded, and
 % indiviudal Chi-squared tests applied 
 % 
 

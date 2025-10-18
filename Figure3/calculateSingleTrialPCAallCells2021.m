@@ -15,7 +15,7 @@ subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
 saveFlag = true; 
 
-chls = 33:240;
+chls = [1:240];
 subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 win = 0.02; % in sec
@@ -25,9 +25,9 @@ minRestFlag = 1;
 minRest = abs(tmin); % in sec; minimal rest prior to move onset (trials to include)
 
 threshlowFRFlag = 1; % 0/1;  remove low FR neurons 
-threshlowFR = 1; %  sp/s threshold 
+threshlowFR = 0.01; %  sp/s threshold 
 
-sqrtFlag = 0;
+sqrtFlag = 1;
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
 centerNormalizeFlag = 1; % normalize cells/variables by their variance in addition to mean-centering (PCA on correlation matrix)    
 
@@ -178,7 +178,7 @@ end
 
 % save results 
 if saveFlag 
-    save('Fig3A_Supp_AllMotor.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
+    save('Fig3A_All.mat','allCellsPerTrialSpikeCount', 'spikeLabels2plot','cortRegion', 'allTrials','chls','bhvs2plot','ax');
 end
 
 

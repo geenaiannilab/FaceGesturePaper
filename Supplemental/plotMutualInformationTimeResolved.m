@@ -8,13 +8,7 @@
 %%%% Vertical dashed lines mark the earliest significant latency, defined as the first occurrence of at least two contiguous supra-threshold bins. 
 
 % written GI 250831
-
-
-%% ================== USER SETTINGS ==================
-dates   = {'Thor_171005','Thor_171010','Thor_171027','Thor_171128',...
-    'Barney_210704','Barney_210706','Barney_210805'};
-baseDir = '~/Dropbox/PhD/SUAInfo/';
-runSim = false; 
+clear all; close all;
 set(0,'defaultAxesFontSize',20)
 
 % Time-resolved MI parameters
@@ -27,90 +21,8 @@ minRun    = 2;             % minimum consecutive bins to declare latency (e.g., 
 
 baseColors = [0.494 0.184 0.556; 0.635 0.078 0.184; 0.85 0.325 0.098; 0.929 0.694 0.125];
 
-%% ================== POOLS ACROSS DAYS ==================
-MIcorr_days   = {};   % [nWin x nCells_day]
-MIraw_days    = {};   % [nWin x nCells_day]
-pvals_days    = {};   % [nWin x nCells_day]
-regions_days  = {};   % 1 x nCells_day (cellstr)
-centers_days  = {};   % 1 x nWin (s)
-
-% store best example neuron per region (across all days)
-examples = struct('region',{},'day',{},'cellIdx',{},'spikes',{},'labels',{},'binSize',{});
-
-%% ================== MAIN DAY LOOP ==================
-for dd = 1:numel(dates)
-    dayID  = dates{dd};
-   
-    if runSim 
-        dat = simulate_timeResolved_MI_dataset();
-    else
-        workDir = [baseDir dayID '/Data4Analysis/'];
-        dat = load([workDir 'binnedSpikesForMI.mat']); 
-    end
-    
-    % Quick sanity check:
-    s = squeeze(sum(dat.allSpikesAllSubs.binnedSpikes,2));  % trial x cells total counts
-
-    spikes = dat.allSpikesAllSubs.binnedSpikes;    % [trials x time x cells]
-    labels = dat.allTrials.trialType;
-    regions_full = dat.cortRegion;
-
-    % Bin size (s)
-    if isfield(dat,'taxis2take') && numel(dat.taxis2take) > 1
-        binSize = mode(diff(dat.taxis2take));
-        t0      = dat.taxis2take(1);
-    else
-        binSize = 0.001; t0 = 0;
-    end
-
-    % Remove near-silent cells
-    cellTotals = squeeze(sum(sum(spikes,1),2));
-    keepCells  = cellTotals > 1;
-    spikes     = spikes(:,:,keepCells);
-    regions    = regions_full(keepCells);
-    nCells_day = size(spikes,3);
-    nTime      = size(spikes,2);
-
-    % Sliding windows
-    winBins  = max(1, round((win_ms/1000)/binSize));
-    stepBins = max(1, round((step_ms/1000)/binSize));
-    starts   = 1:stepBins:(nTime - winBins + 1);
-    nWin     = numel(starts);
-    centersS = t0 + ((starts - 1) + winBins/2) * binSize;  % seconds
-
-    MI_raw_win  = nan(nWin, nCells_day);
-    MI_corr_win = nan(nWin, nCells_day);
-    pvals_win   = nan(nWin, nCells_day);
-
-    % Time-resolved MI per window
-    for w = 1:nWin
-        idx = starts(w):(starts(w)+winBins-1);
-        counts2D = squeeze(sum(spikes(:, idx, :), 2));  % [trials x cells]
-        [MI_corr_w, MI_raw_w, pvals_w] = computeMI_perCell_fast(counts2D, labels, nShuffles);
-        MI_raw_win(w,:)  = MI_raw_w;
-        MI_corr_win(w,:) = MI_corr_w;
-        pvals_win(w,:)   = pvals_w;
-    end
-
-    % Save per day
-    MIcorr_days{dd}  = MI_corr_win;
-    MIraw_days{dd}   = MI_raw_win;
-    pvals_days{dd}   = pvals_win;
-    regions_days{dd} = regions(:)';
-    centers_days{dd} = centersS(:)';
-end
-
-%% Align time across days (trim to shortest)
-nWin_each = cellfun(@numel, centers_days);
-nWin_min  = min(nWin_each);
-for dd = 1:numel(dates)
-    MIcorr_days{dd}  = MIcorr_days{dd}(1:nWin_min, :);
-    MIraw_days{dd}   = MIraw_days{dd}(1:nWin_min, :);
-    pvals_days{dd}   = pvals_days{dd}(1:nWin_min, :);
-    centers_days{dd} = centers_days{dd}(1:nWin_min);
-end
-timeVec = centers_days{1};
-nWin    = nWin_min;
+%% load results 
+load('matfiles/FigS10.mat');
 
 %% Pool per window across days
 regions_all = [regions_days{:}];

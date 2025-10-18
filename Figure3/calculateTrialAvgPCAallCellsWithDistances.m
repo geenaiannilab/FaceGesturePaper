@@ -19,15 +19,15 @@ clear all; close all;
 set(0,'defaultAxesFontSize',36); set(0, 'DefaultLineLineWidth', 4);
 set(0,'defaultAxesFontWeight','bold')
 
-date = '210805';
+date = '210704';
 subject ='Barney';
 workdir = (['/Users/geena/Dropbox/PhD/SUAinfo/' subject '_' date '/Data4Analysis']);
-saveFlag = true; 
+saveFlag = false; 
 
 regions = getChannel2CorticalRegionMapping(subject, 1);
 chls = 1:240;
 
-subsessions2plot = [9 10 11 12 14];
+subsessions2plot = [2:5 7:10];
 bhvs2plot = [1 2 4];
 
 % DO NOT CHANGE!
@@ -308,8 +308,8 @@ end
 cfg = struct();
 cfg.nShuf       = 1000;      % number of label shuffles
 cfg.alphaFDR    = 0.05;      % FDR target per region×pair
-cfg.useMaxDim   = true;      % test the column at nDimGreater90 (recommended)
-cfg.dimIdx      = [];        % OR set a fixed PCA dim (e.g., 3) if ~useMaxDim
+cfg.useMaxDim   = true;      
+cfg.dimIdx      = [];        
 cfg.rngSeed     = 13;        % for reproducibility
 
 [shuffleStats, shuffleNull] = test_distance_shuffle( ...
@@ -505,14 +505,14 @@ for rr = 1:numel(regions)
     chls2take = ismember(spikeLabels2plot(:,1), regions{rr}.channels);
     pcaInput = neuralInput(:, chls2take);
 
-    % Center-only PCA (default): match your main code path
-    [coeff, score, latent] = pca(pcaInput); % centered
+    % compute PCA 
+    [coeff, score, latent] = pca(pcaInput); 
 
     explained = latent / sum(latent);
     nDimGreater90 = find(round(cumsum(explained), 2) >= 0.9, 1);
     if isempty(nDimGreater90), nDimGreater90 = min(3, size(score,2)); end
 
-    % carve trajectories per behavior
+    % pull out trajectories per behavior
     T  = size(allCellsTrialAvgResponse(1).bhv,1);
     s0 = 0;
     for b = 1:numel(bhvs2plot)
@@ -527,13 +527,13 @@ for rr = 1:numel(regions)
     allDataOut.(rlab).explained = explained;
     allDataOut.(rlab).nDimGreater90 = nDimGreater90;
 
-    % distances over time as in your code (Euclidean, up to dd dims)
+    % Euclidean distances over time up to dd dims
     maxDim = nDimGreater90;
     ThrCoords  = allDataOut.(rlab).bhv(1).neuralTraj(:, 1:maxDim);
     LSCoords   = allDataOut.(rlab).bhv(2).neuralTraj(:, 1:maxDim);
     ChewCoords = allDataOut.(rlab).bhv(3).neuralTraj(:, 1:maxDim);
 
-    % Prealloc
+    % prep
     Tpts = size(ThrCoords,1);
     allDataOut.(rlab).distanceThrVCh  = nan(Tpts, maxDim);
     allDataOut.(rlab).distanceThrVLS  = nan(Tpts, maxDim);

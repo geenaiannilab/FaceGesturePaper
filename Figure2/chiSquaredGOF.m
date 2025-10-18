@@ -1,12 +1,15 @@
-% %% this script with load the ANOVA on FR results 
-% %% (which performed a 2-way anova (bhv, time, interaction) on FRs per cell
-% %% This will calculate an omnibus statistic (chi-sq) to tell you if 
+% 
+% %% This script will calculate an omnibus statistic (chi-sq) to tell you if 
 % %% 1) fraction of significantly modulated cells is same v. different
 % %%     between regions
 % %%
 % %% 2) posthoc tests will tell you which region pairs had different
 % %%     fractions of modulated cells 
-%%%%%%%%% GRI 09/11/2025 
+% 
+% %% loads '(date_subj_)facePrefAnova,.mat', which is the output of facePrefAnova.m
+% %% (which performed a 2-way anova (bhv, time, interaction) on FRs per cell
+% 
+% %%%%%%%% GRI 09/11/2025 
 
 clear all; 
 subjects = {'barney','thor'};
@@ -178,8 +181,8 @@ Pair_Int  = makePairRows("Interact", pairs, intChi2,  intP_raw,  q_int,  sig_int
 Stats = [Overall_Beh; Overall_Time; Overall_Int; Pair_Time; Pair_Int];
 
 % (Optional) save
- save('/Users/geena/Dropbox/PhD/SUAinfo/chi2_summary_full.mat','Stats');
- writetable(Stats,'/Users/geena/Dropbox/PhD/SUAinfo/chi2_summary_full.csv');
+ save('matfiles/chi2_summary_full.mat','Stats');
+ writetable(Stats,'matfiles/chi2_summary_full.csv');
 
 %% ---------- Local functions ----------
 function T = makeOverallRow(factorName, chi2tbl, chi2stat, pval, sigVec, alpha, regionLabels, nPerRegion, propPerRegion)

@@ -22,7 +22,7 @@ binSize = 0.4;
 colorArray = [0.4940 0.1840 0.5560;0.6350 0.0780 0.1840;0.8500 0.3250 0.0980;0.9290 0.6940 0.1250];
 
 %% load data 
-f2load = dir('MatFiles/CTD*');
+f2load = dir('matfiles/CTD*');
 ctdat = load([f2load.folder '/' f2load.name]);
 
 %% Create timebase, channels 
@@ -70,7 +70,7 @@ outTGW = plot_pairwise_TGW_matrix(resTGW, 'Alpha',0.05, 'Adjust','fdr', ...
 %% Plot all results per region
 % Summary bars with overlaid brackets (FDR across pairs; use two-sided p)
 summarize_ctd_dynamics(ctdat, arrayList, ...
-   'chance', chance, 'band', band, 'tAxis', windowsCenter, 'colors', colorArray, ...
+   'chance', chance, 'band', band, 'tAxis', windowsCenter, 'Colors', colorArray, ...
    'resDI', resDI, 'resTGW', resTGW, ...
    'Alpha', 0.05, 'Adjust', 'fdr', 'UsePColumn', 'p_two', ...
    'ShowStars', true);
@@ -153,23 +153,20 @@ function out = summarize_ctd_dynamics(ctdat, arrayList, varargin)
 % pairwise significance overlays from compare_*_unpaired_all results.
 %
 % Name-Value options:
-%   'chance'     : scalar chance level (default 0)
+%   'chance'     : scalar chance level (defined by CTD) 
 %   'band'       : diagonal half-width for DI (bins; default 1)
-%   'tAxis'      : time vector for TGW (default [])
-%   'colors'     : R x 3 color array (default lines(R))
+%   'tAxis'      : time vector for TGW 
 %   'resDI'      : struct from compare_DI_unpaired_all (default [])
 %   'resTGW'     : struct from compare_TGW_unpaired_all (default [])
 %   'Alpha'      : alpha for significance (default 0.05)
 %   'Adjust'     : 'none' | 'fdr' | 'bonferroni' (default 'fdr')
 %   'UsePColumn' : which p-column from res.table ('p_two','p_right','p_left')
-%   'ShowStars'  : true/false (default true)
-%   'MaxPairs'   : max # of brackets to draw (default inf)
 
 p = inputParser;
 addParameter(p,'chance',0,@isnumeric);
 addParameter(p,'band',1,@(x)isnumeric(x)&&isscalar(x));
 addParameter(p,'tAxis',[],@isnumeric);
-addParameter(p,'colors',[],@isnumeric);
+addParameter(p,'Colors',[],@isnumeric);
 addParameter(p,'resDI',[],@(s)isstruct(s)||isempty(s));
 addParameter(p,'resTGW',[],@(s)isstruct(s)||isempty(s));
 addParameter(p,'Alpha',0.05,@(x)isnumeric(x)&&isscalar(x)&&x>0&&x<1);
@@ -181,7 +178,7 @@ parse(p,varargin{:});
 chance = p.Results.chance;
 band   = p.Results.band;
 tAxis  = p.Results.tAxis;
-C      = p.Results.colors;
+C      = p.Results.Colors;
 resDI  = p.Results.resDI;
 resTGW = p.Results.resTGW;
 alpha  = p.Results.Alpha;
@@ -255,8 +252,8 @@ end
 % ---------- Pack outputs ----------
 out.DI  = table(arrayList(:), DI, DIsem, 'VariableNames', {'Region','DI_mean','DI_sem'});
 out.TGW = table(arrayList(:), TGW, TGWsem, 'VariableNames', {'Region','TGW_mean','TGW_sem'});
-out.P_DI  = P_DI;   % R x R adjusted p-values (NaN on diagonal)
-out.P_TGW = P_TGW;  % R x R adjusted p-values (NaN on diagonal)
+out.P_DI  = P_DI;   % R x R adjusted p-values 
+out.P_TGW = P_TGW;  
 
 end
 
@@ -272,7 +269,7 @@ P = nan(R);    % symmetric (NaN on diag)
 raw = nan(R);  % store upper triangle raw ps to adjust together
 
 % collect upper-tri p's in consistent region order
-maskUT = false(R); % placeholder
+maskUT = false(R); 
 plist = [];  ij = [];
 for k = 1:height(T)
     A = string(T.RegionA(k)); B = string(T.RegionB(k));
@@ -280,8 +277,8 @@ for k = 1:height(T)
     i = idx(A); j = idx(B);
     if i==j, continue; end
     if i>j, tmp=i; i=j; j=tmp; end
-    plist(end+1,1) = T.(pcol)(k); %#ok<AGROW>
-    ij(end+1,:) = [i j]; %#ok<AGROW>
+    plist(end+1,1) = T.(pcol)(k); 
+    ij(end+1,:) = [i j]; 
 end
 
 % adjust across all collected pairs
@@ -295,7 +292,7 @@ pairs = ij; % indices of pairs used
 end
 
 function di = diagonality_index(CTD, varargin)
-% DI = mass near diagonal / total mass (after baseline subtract & clipping)
+% DI = mass near diagonal / total mass (after baseline subtracting)
 % CTD: T x T x N iterations; options: 'band' (bins), 'chance' (scalar)
 
 p = inputParser;
@@ -304,11 +301,11 @@ addParameter(p,'chance',0,@isnumeric);
 parse(p,varargin{:});
 w = p.Results.band; chance = p.Results.chance;
 
-A = max(CTD - chance, 0);                    % baseline subtract, clip
+A = max(CTD - chance, 0);                    % baseline subtract
 T = size(A,1);
-diagMask = abs((1:T)' - (1:T)) <= w;         % logical T×T
-tot = squeeze(sum(sum(A,1),2));              % N×1
-on  = squeeze(sum(sum(A .* diagMask,1),2)); % N×1
+diagMask = abs((1:T)' - (1:T)) <= w;         
+tot = squeeze(sum(sum(A,1),2));             
+on  = squeeze(sum(sum(A .* diagMask,1),2)); 
 di.iter = on ./ max(tot, eps);
 di.mean = mean(di.iter,'omitnan');
 di.sem  = std(di.iter,0,'omitnan')/sqrt(numel(di.iter));
@@ -327,9 +324,10 @@ chance = p.Results.chance; tAxis = p.Results.tAxis;
 [T,~,N] = size(CTD);
 widths = nan(N,1);
 
-for n = 1:N % each iteration 
+for n = 1:N 
     A = squeeze(CTD(:,:,n)) - chance; A(A<0)=0;
     w_i = nan(T,1);
+
     for i = 1:T % time points
         row = A(i,:);
         if all(~isfinite(row)) || max(row)==0, continue; end
@@ -356,8 +354,6 @@ function out = compare_DI_unpaired_all(diCell, names, varargin)
 % INPUTS
 %   diCell : R-by-1 cell, each a vector of DI values (per iteration) for a region
 %   names  : R-by-1 cellstr/string array of region names
-% OPTIONS
-%   'NPerm' (10000), 'NBoot' (5000), 'Seed' ([])
 
 p = inputParser;
 addParameter(p,'NPerm',10000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
@@ -407,8 +403,6 @@ function out = compare_TGW_unpaired_all(tgwCell, names, varargin)
 % INPUTS
 %   tgwCell : R-by-1 cell, each a vector of TGW values (per iteration) for a region
 %   names   : R-by-1 cellstr/string array of region names
-% OPTIONS
-%   'NPerm' (10000), 'NBoot' (5000), 'Seed' ([])
 
 p = inputParser;
 addParameter(p,'NPerm',10000,@(x)isnumeric(x)&&isscalar(x)&&x>=100);
@@ -431,7 +425,7 @@ for k = 1:size(pairs,1)
     stats = permtest_unpaired_mean_diff(mA, mB, ...
              'NPerm', nPerm, 'NBoot', nBoot, 'Seed', seed);
 
-    % Assemble a tidy row
+    % Assemble a  row
     rows = [rows; {names{i}, names{j}, ...
                    mean(mA,'omitnan'), mean(mB,'omitnan'), stats.diff, ...
                    stats.p_two, stats.p_right, stats.p_left, ...
@@ -450,9 +444,9 @@ T = cell2table(rows, 'VariableNames', { ...
     'CI_A_low','CI_A_high','CI_B_low','CI_B_high','CI_Diff_low','CI_Diff_high'});
 
 out = struct();
-out.table = T;            % tidy summary for all pairs
-out.pairs = pairs;        % indices into 'names'
-out.stats = pairStats;    % raw stats structs per pair
+out.table = T;            
+out.pairs = pairs;        
+out.stats = pairStats;  
 end
 
 function diCell = build_di_vectors(ctdat, arrayList, varargin)
@@ -497,7 +491,6 @@ R = numel(arrayList);
 tgwCell = cell(R,1);
 for r = 1:R
     CTD = ctdat.validationScoreStruct.(arrayList{r});   % T x T x N
-    % Call once per region; helper returns per-iteration widths in tgw.iter
     tgw = temporal_generalization_width(CTD, 'chance', chance, 'tAxis', tAxis);
     % tgw.iter is N×1, where each entry is the median FWHM across train times
     tgwCell{r} = tgw.iter(:);
@@ -512,11 +505,9 @@ function out = plot_pairwise_metric_matrix(res, varargin)
 %     RegionA, RegionB, MeanA, MeanB, Diff_AminusB, p_two  (plus CIs, etc.)
 %
 % OPTIONS
-%   'MetricLabel' : e.g., 'DI (higher = more dynamic)'  [default: 'Metric']
+%   'MetricLabel' : e.g., 'DI (higher = more dynamic)'  
 %   'Alpha'       : significance level (default 0.05)
 %   'Adjust'      : 'none' | 'fdr' | 'bonferroni' (default 'none')
-%   'Colormap'    : name or Mx3 (default: red-blue diverging)
-%   'ShowValues'  : true/false to print numeric diffs in cells (default true)
 %
 % OUTPUT (struct)
 %   .regions  : cellstr of region names (plot order)
@@ -539,9 +530,8 @@ cmap  = p.Results.Colormap;
 showVals = p.Results.ShowValues;
 
 T = res.table;
-% Unique region list in sorted order
 regs = unique([string(T.RegionA); string(T.RegionB)],'stable');
-[regs, ord] = sort(regs); %#ok<ASGLU>
+[regs, ord] = sort(regs);
 R = numel(regs);
 
 % Map region name -> index
@@ -629,7 +619,7 @@ out.DiffMat = Diff;
 out.PvalMat = P_adj;
 out.SigMat  = Sig;
 
-% Tidy table of adjusted p-values
+% adjusted p-values
 pairs = nchoosek(1:R,2);
 rows = cell(size(pairs,1), 6);
 for k = 1:size(pairs,1)
@@ -911,11 +901,4 @@ switch lower(string(how))
 end
 end
 
-function C = cmap_diverging()
-% simple blue-white-red
-n=256;
-blu = [linspace(0,1,n/2)', linspace(0,1,n/2)', ones(n/2,1)];
-red = [ones(n/2,1), linspace(1,0,n/2)', linspace(1,0,n/2)'];
-C = [blu; red];
-end
 

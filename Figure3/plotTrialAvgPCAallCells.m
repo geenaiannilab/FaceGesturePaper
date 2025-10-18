@@ -1,16 +1,17 @@
 
-%%%%%%%% PLOTTING Figure 3C
+%%%%%%%% PLOTTING Figure 3C, 3D 
 %%%%%%%%  Facial gestures distinct, non-overlapping trajectories in neural space
 %%%%%%%%
-%%%%%%%%  Plots three neural trajectories
+%%%%%%%%  Plots Time-resolved neural population activity trajectories (trial-averaged and smoothed, -1000 ms to +1000 ms, faint to full saturation) 
+%%%%%%%     in the space of the first three principle components (all  cells across all regions).
 %%%%%%%%  Each trajectory is the projection of trial-averaged neural activity during one gesture type onto the top three PCs
-%%%%%%%   Also plots each axis
-%%%%%%%   
-%%%%%%%   Plots inter-trajectory distances (Euclidean)
-%%%%%%    Within each panel, subplots show the unique gesture trajectory pairwise comparisons
-%%%%%%     Thick lines, actual distances. Faint shaded bands at bottom represent shuffle-null envelopes (2.5–97.5% across all shuffles). 
-%%%%%       Time bins at which average inter-trajectory distance was significantly greater than null, are background shaded 
-%%%%%
+%%%%%%%%  
+%%%%%%%% Also plots projection of trajectories from C onto first three principal components 
+%%%%%%%  A and C: data from one typical day
+%%%%%%%% Note that Figures 3C, 3D in the main manuscript are all cells, all regions together 
+%%%%%%%% Input is data.AllDataOut.(region).score, which is nTimepoints x nPCs
+%%%%%%%% 
+%%%%%%%% This will also plot each region independently, as in Fig S9
 % written GRI 250911
 
 clear all; close all;
@@ -21,14 +22,17 @@ set(0,'defaultAxesFontWeight','bold')
 %% load data 
 %% ============================
 
-fileList = dir(fullfile('matfiles/Fig3C_Supp_AllMotor.mat')); % change depending on which trajectory to plot 
+fileList = dir(fullfile('matfiles/Fig3C*.mat')); % change depending on which trajectory to plot 
 dataFiles = {fileList.name};
 
 for dd = 1:length(dataFiles)
 
     data = load(['MatFiles/' dataFiles{dd}]);
-    regionLabel = extractBetween(dataFiles{dd}, 'Fig3C_', '.mat') ; regionLabel = regionLabel{1};
-    
+    if dd == 1
+        regionLabel = 'All';
+    else
+        regionLabel = extractBetween(dataFiles{dd}, 'Fig3C_', '.mat') ; regionLabel = regionLabel{1};
+    end
     bhvs2plot = data.bhvs2plot;
     taxis2take = data.taxis2take;
     
@@ -79,13 +83,6 @@ for dd = 1:length(dataFiles)
     grid on; axes = gca; axes.LineWidth = 3; axes.GridLineStyle = ':';
 %     exportgraphics(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.pdf'], 'ContentType', 'vector');
 %     savefig(gcf, ['~/Desktop/NeuralTrajs_' regions{rr}.label '.fig']);
-  
-    %% plotting distance results with stats
-    f4 = figure; set(f4, 'Position',[476 92 1022 774]);
-    plot_distance_shuffle_results(data.shuffleStats, data.shuffleNull, regionLabel, taxis2take, ...
-        'ShowAverage', true, 'CIPrct', [5 95]);
-    set(findall(gcf,'Type','axes'), 'YLimMode','manual');
-    ylims = [0, max(cellfun(@(p) max(data.shuffleStats.(regionLabel).(p).obs), {'ThrVCh','ThrVLS','LSVCh','Average'})) * 1.1];
 
 end
 
