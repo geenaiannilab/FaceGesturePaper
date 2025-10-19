@@ -40,7 +40,7 @@ minRest = abs(tmin); % in sec; minimal rest prior to move onset (trials to inclu
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
 centerNormalizeFlag = 1; % normalize cells/variables by their variance in addition to mean-centering (PCA on correlation matrix)    
 threshlowFRFlag = 1; % 0/1;  remove low FR neurons 
-threshlowFR = 0.02; %  sp/s threshold 
+threshlowFR = 0.1; %  sp/s threshold 
 %%% NOTE RE: PREPROCESSING INPUT
 %%% pca() in matlab does mean-centering *by default*, but does not divide by stdev by default 
 
