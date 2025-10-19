@@ -1,3 +1,0 @@
-# FaceGesturePaper
-by figure
-Test

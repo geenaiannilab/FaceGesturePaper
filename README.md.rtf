@@ -1,0 +1,491 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Arial-BoldMT;\f1\fswiss\fcharset0 ArialMT;\f2\froman\fcharset0 TimesNewRomanPSMT;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red21\green21\blue21;\red255\green255\blue255;
+\red157\green157\blue157;\red0\green0\blue233;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;\cssrgb\c10588\c10588\c10588;\cssrgb\c100000\c100000\c100000;
+\cssrgb\c67843\c67843\c67843;\cssrgb\c0\c0\c93333;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\b\fs32 \cf2 \expnd0\expndtw0\kerning0
+This repository contains all code necessary to regenerate the figures found in: 
+\f1\b0 \uc0\u8232 \cf3 \cb4 Ianni G.R., V\'e1zquez Y., Rouse A.G., Schieber M.H., Prut Y., Freiwald W.A. Facial gestures are enacted via a cortical hierarchy of dynamic and stable codes. 
+\f2 \cf2 \cb1 \
+
+\f1 \cf3 \cb4 \'a0
+\f2 \cf2 \cb1 \
+
+\f0\b \'a0
+\f2\b0 \
+
+\f0\b \'a0
+\f2\b0 \
+
+\f0\b Figure 1 
+\f2\b0 \
+
+\f0\b Facial gestures are distinguishable during a naturalistic social paradigm
+\f2\b0 \
+
+\f1 1B : Facial posture prior to movement onset 
+\f2 \
+
+\f1 1C: TSNE plot of marker positions 
+\f2 \
+
+\f1 1D-F: Face PCs by weights, by temporal resolution, by trajectory 
+\f2 \
+
+\f1 Data: markerTrajectories.mat, markerTrajectoriesTSNE.mat
+\f2 \
+
+\f1 Plotting: plotBehavioralTrajectories.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: generateBehavioralTrajectories.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f0\b Figure 2
+\f2\b0 \
+
+\f0\b Single-Cell Activity and Selectivity in Cortical Face-Motor Regions. 
+\f2\b0 \
+
+\f1 2B: Sample population activity of all simultaneously recorded cells and facial markers 
+\f2 \
+
+\f1 Data: Fig2B.mat 
+\f2 \
+
+\f1 Plotting: plotNeuralActivityMatrix.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: plotRasterAllCells2021.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 2C: Peri-event time histograms of four neurons aligned to onset of three gestures
+\f2 \
+
+\f1 Data: Fig2C.mat
+\f2 \
+
+\f1 Plotting: plotPSTHs.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f1 2D: Bee plot of gesture preference indices (GPI) distributions for each cortical area 
+\f2 \
+
+\f1 Data: Fig2D_GPIvalues.mat 
+\f2 \
+
+\f1 Plotting: plotGPIByRegion.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: gesturePreferenceIndex.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 2E: Fractions of cells in each region with significant activity modulations by facial gesture type, time, and their interaction 
+\f2 \
+
+\f1 Data: Fig2E.mat
+\f2 \
+
+\f1 Plotting: plotBhvTimeANOVAbyRegion.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: facePrefANOVA.m, chiSquaredGOF.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f0\b Figure 3 
+\f2\b0 \
+
+\f0\b Population encoding of Facial Gestures
+\f2\b0 \
+
+\f1 3A: Single-event population activity vectors cluster by gesture-type in neural state space 
+\f2 \
+
+\f1 Data: Fig3A.mat
+\f2 \
+
+\f1 Plotting: plotSingleTrialsNeuralStateSpace.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: calculateSingleTrialPCAallCells2021.m 
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 3B: Decoding categorical gesture type from neural population activity
+\f2 \
+
+\f1 Data: Fig3B.mat
+\f2 \
+
+\f1 Plotting: plotSVMClassifierAcrossDays.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: analyzeSVMClassifierAcrossDays.m, SVMClassifierAcrossDays.m, SVMClassifierPermutationTestingAcrossDays.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 3C, 3D: Trial-averaged, time resolved gesture-specific neural trajectories 
+\f2 \
+
+\f1 Data: Fig3C.mat
+\f2 \
+
+\f1 Plotting: plotTrialAvgPCAallCells.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: calculateTrialAvgPCAallCellsWithDistances.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f0\b Figure 4
+\f2\b0 \
+
+\f0\b Kinematic decoding and unique neural correlations during gestures
+\f2\b0 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 4A, 4B : Kinematic decoding of facial gesture components by region
+\f2 \
+
+\f1 Data Fig4AResults.mat, Fig4ANullResults.mat
+\f2 \
+
+\f1 Plotting script:
+\f0\b  
+\f1\b0 plotPSIDResultsVNull.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: prepData2023.m, makePseduoPopPSID23.m, analyzePSIDWrapper.m (runs runCorePSIDAnalysis.m underneath)
+\f2 \cf2 \
+
+\f1 \cf5 Dependencies: /PSID/
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf2 \'a0
+\f2\b0 \
+
+\f1 4C: Strength of pairwise cross-gesture neural correlations (R
+\fs26\fsmilli13333 \super 2
+\fs32 \nosupersub , threat v. lipsmack, threat v. chew, and lipsmack v. chew, one dot per recording) for each region 
+\f2 \
+
+\f1 Data: \'a0Fig4C.mat
+\f2 \
+
+\f1 Plotting: plotCorrStructureAcrossExpressions.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: calcR2BetweenPairwiseCorrelations.m, neuralCorrelationStructureAcrossExpressions_wRankOrder.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 4D: Population response dissimilarity matrices, all regions 
+\f2 \
+
+\f1 Data: Fig4D/(region).mat
+\f2 \
+
+\f1 Plotting: plotCorrStructureAcrossExpressions.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: neuralCorrelationStructureAcrossExpressions_wRankOrder.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 4E: Spike-triggered movement averages 
+\f2 \
+
+\f1 Data, plotted: STMA/(pair).fig 
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: STMA2021wrapper.m, nullSTMAwrapper.m, evaluateSTMAwrapper.m 
+\f2 \cf2 \
+
+\f1 \cf5 Dependencies:
+\f0\b  
+\f1\b0 /STMA/
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f0\b Figure 5 
+\f2\b0 \
+
+\f0\b Stable and dynamic coding of facial gestures across cortex 
+\f2\b0 \
+
+\f1 Left plots 
+\f2 \
+
+\f1 Data: Fig5_left.mat
+\f2 \
+
+\f1 Plotting Scripts: plotCrossTemporalDecodingAcrossDays.m, 
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: analyzeCrossTemporalSVMClassifierAcrossDays.m, 
+\f2 \cf2 \
+
+\f1 \cf5 Dependencies: crossTemporalSVMClassifierAcrossDays.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf2 \'a0
+\f2 \
+
+\f1 Right plots
+\f2 \
+
+\f1 Data: neuralTrajectory_combined.mat
+\f2 \
+
+\f1 Plotting: neuralTrajectoryCharacteristicsAcrossDays.m
+\f2 \
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf5 Analysis: calculateNeuralTrajectoryAcrossDays.m
+\f2 \cf2 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\b \cf2 \'a0
+\f2\b0 \
+
+\f0\b SUPPLEMENTAL FIGURES 
+\f2\b0 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S1
+\f2\b0 \
+
+\f1 Handscored gesture onsets compared to automatic detection by continuous facial marker tracking
+\f2 \
+
+\f1 Data: markerTrajectories.mat
+\f2 \
+
+\f1 Analysis, Plotting: compareManualScoring.m 
+\f2 \
+
+\f0\b \'a0
+\f2\b0 \
+
+\f0\b Figure S2
+\f2\b0 \
+
+\f1 Mutual information distributions by region 
+\f2 \
+
+\f1 Data: FigS2.mat
+\f2 \
+
+\f1 Plotting: plotMutualInformationStatic.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S3A
+\f2\b0 \
+
+\f1 Between-region categorical decoding accuracy over time
+\f2 \
+
+\f1 Data: Fig3B.mat
+\f2 \
+
+\f1 Plotting: plotSVMClassifierAcrossDays.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S3B
+\f2\b0 \
+
+\f1 Categorical decoding curves by region 
+\f2 \
+
+\f1 Data: Fig3B.mat
+\f2 \
+
+\f1 Plotting: plotSVMClassifierAcrossDays.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S4A, S4B
+\f2\b0 \
+
+\f1 Euclidean distances between gesture-specific neural trajectories, per day
+\f2 \
+
+\f1 Data: FigS4.mat
+\f2 \
+
+\f1 Plotting: summarizeEuclideanDistancesOverDays.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S4C
+\f2\b0 \
+
+\f1 Euclidean distances between gesture-specific neural trajectories, across pseudopopulations 
+\f2 \
+
+\f1 Data: /Figure5/matfiles/neuralTrajectory_combined.mat
+\f2 \
+
+\f1 Plotting: /Figure5/neuralTrajectoryCharacteristicsAcrossDays.m
+\f2 \
+
+\f0\b \'a0
+\f2\b0 \
+
+\f0\b Figure S5
+\f2\b0 \
+
+\f1 Kinematic Decoding Performance by Region, with statistical comparisons overlaid 
+\f2 \
+
+\f1 Data: /Figure4/matfiles/Fig4AResults.mat, /Figure4/matfilesFig4ANullResults.mat
+\f2 \
+
+\f1 Plotting script: plotPSIDResultsVNull.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S6A, S6B
+\f2\b0 \
+
+\f1 Rank order similarity of gesture-specific neural correlations by region
+\f2 \
+
+\f1 Data: /Supplemental/matfiles/combined_rankOrderStats.csv
+\f2 \
+
+\f1 Plotting: summarizeRankOrderStats.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S7 
+\f2\b0 \
+
+\f1 Diagonal Index, Temporal Generalization Windows of Cross-temporal Generalization Matrices by Region 
+\f2 \
+
+\f1 Data: /Figure5/matfiles/Fig5_left.mat
+\f2 \
+
+\f1 Plotting: metricsCrossTemporalDecoding.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S8
+\f2\b0 \
+
+\f1 Examples of per day, per region behavioral clustering of individual trials in neural state space, separated by region 
+\f2 \
+
+\f1 Data: /Figure3/matfiles/Fig3A_(region).mat
+\f2 \
+
+\f1 Plotting: plotSingleTrialsNeuralStateSpace.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S9 
+\f2\b0 \
+
+\f1 Examples of per day, per region gesture trajectories in 3D neural state space, separated by region 
+\f2 \
+
+\f1 Data: Fig3C.mat
+\f2 \
+
+\f1 Plotting: plotTrialAvgPCAallCells.m
+\f2 \
+
+\f1 \'a0
+\f2 \
+
+\f0\b Figure S10
+\f2\b0 \
+\pard\pardeftab720\ri1021\partightenfactor0
+
+\f1 \cf2 Data: /matfiles/FigS10.mat
+\f2 \
+
+\f1 Analysis Scripts:\'a0 /Supplemental/calcMutualInformationTimeResolved.m 
+\f2 \
+
+\f1 Plotting Scripts: /Supplemental/plotMutualInformationTimeResolved.m 
+\f2 \
+}
