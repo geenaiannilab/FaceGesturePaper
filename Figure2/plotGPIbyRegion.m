@@ -5,7 +5,8 @@
 %%%%%%%%
 %%%%%%%% GPI index by region with overlying statistics (no effect of cortical region on GPI)  
 %%%%%%%% GPI index by region, only for selective cells (GPI > 0.5) 
-%%%%%%%%
+%%%%%%%% Input data includes 'combinedResults', which contains
+%%%%%%%%    'faceExpPrefIndex' (GPI) and total number of cells per region 
 %%%%%%%%% GRI 09/11/2025 
 
 clear all
@@ -17,7 +18,7 @@ subjects = {'barney','thor'};
 GPIthreshold = 0.5;
 
 %% Load matfiles
-pathtoData = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/matfiles/Fig2D_GPIvalues.mat';
+pathtoData = 'matfiles/Fig2D_GPIvalues.mat';
 load(pathtoData);
 
 %% get the cortical regions per cell 

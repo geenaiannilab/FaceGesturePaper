@@ -9,13 +9,16 @@
 %%%%%%%%
 %%%%%%%% Versus decoding performance of a shuffled, null dataset 
 %%%%%%%% and runs stats, FDR-corr (between regions, also each region v. its null) 
+%%%%%%%% Input data contains (region).kinematicDecoding, which is nFolds x nBhvsPred x nIter
+%%%%%%%  Also contains bhvTest (true) and bhvPred (predicted) for held out
+%%%%%%%  trials; in addition to all final model parameters 
+%%%%%%%
+%%%%%%%  Shuffled results, similar 
 %%%%%%%%% GRI 09/11/2025 
 
 
-
-clear all; %close all; 
+clear all; close all; 
 set(0,'defaultAxesFontSize', 18); % bc im blind 
-
 
 % define the dataset you are running
 popSize = '50'; % nCells

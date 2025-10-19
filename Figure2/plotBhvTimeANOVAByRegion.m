@@ -6,8 +6,9 @@
 %%%%%%%% their interaction on firing rate of individual neurons), over all
 %%%%%%%%  regions. Then use chi-sq to test if there exists differences in
 %%%%%%%%  fractions of significantly modulated cells by region
-%%%%%%%%  Stats are tablular output of chiSquaredGOF.m
+%%%%%%%%  Input data are  statistical table; output of chiSquaredGOF.m
 %%%%%%%%  (FDR-corrected)
+
 %%%%%%%%% GRI 09/11/2025 
 
 

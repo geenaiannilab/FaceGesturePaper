@@ -11,7 +11,7 @@ close all; clear all;
 set(0,'defaultAxesFontSize',24);
 set(0,'defaultAxesFontWeight','bold');
 
-load(['/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure2/matfiles/Fig2B.mat']);
+load('matfiles/Fig2B.mat');
 
 %%%%%
 %%%%% PLOTTING

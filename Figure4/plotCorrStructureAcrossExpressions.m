@@ -10,6 +10,10 @@
 %%%%%%%%     
 %%%%%%%  Plots all R^2 values (1 per day, between pairwise correlations:
 %%%%%%        threat-lipsmack, threat-chew, lipsmack-chew); 
+%%%%%%%%  Input data contains data.SignalCorrOverTime, which is nCell x nCell
+%%%%%%%%    correlation matrices, computed between trial-averaged
+%%%%%%%%    gesture-speicifc PSTHs, pairwise over time; unified sort is
+%%%%%%%%    common ordering, self-sort is self-defined ordering 
 %%%%%%%%% GRI 09/11/2025 
 
 close all; clear all 
@@ -17,7 +21,7 @@ close all; clear all
 set(0,'defaultAxesFontSize', 24); % bc im blind 
 set(0,'defaultAxesFontWeight', 'bold'); 
 
-workdir = '/Users/geena/Documents/MATLAB/projects/FacialGesturesPaperCode/FaceGesturePaper/Figure4/matfiles/Fig4D';
+workdir = 'matfiles/Fig4D';
 regions = {'S1','M1','PMv','M3','All'};
 bhvs2plot = [1 2 4];
 bhvStrings = {'Threat','Lipsmack','Chew'};

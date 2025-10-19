@@ -18,7 +18,6 @@ set(0,'defaultAxesFontWeight','bold')
 data = load('matfiles/Fig3A.mat'); % change input file to examine plots from Supplementary Figures
 thisRegion = 'All';
 
-sqrtFlag = 0;
 centerOnlyFlag = 0; % ONLY mean center input to PCA (dont divide by std)
 centerNormalizeFlag = 1; % normalize cells/variables by their variance in addition to mean-centering (PCA on correlation matrix)    
 

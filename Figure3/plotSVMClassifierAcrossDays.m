@@ -16,7 +16,9 @@
 %%%%%%%%  Will also plot decoding accuracies, compared pairwise by region
 %%%%%%%%  Black bars indicate significant difference in accuracy; two-sample Welch s t-test, cluster-based permutation correction for multiple comparisons
 %%%%%%%%
-
+%%%%%%%   Input data contains data.results (true decoding results of N= 50
+%%%%%%%   pseudopopulations) and data.perm (null results from 100
+%%%%%%%   permutations per population) 
 %%%%%%%%% GRI 09/11/2025 
 
 clear all; close all; 

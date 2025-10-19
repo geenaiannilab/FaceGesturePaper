@@ -8,11 +8,15 @@
 %%%%%%% each region (as in Figure 5B), averaged over iterations (N=50)
 %%%%%%% 2) calculating the distance between two successive time bins in N-dimensional neural space 
 %%%%%%  3) to test additional dimensions, edit 'dims2test' below
-%%%%%%  Also runs permutation-based clustering significance testing to
-%%%%%%%     compare region-region trajectory velocities 
-%%%%%%% 
+%%%%%% 
+%%%%%   Also runs permutation-based clustering significance testing to
+%%%%%%%     compare region-region trajectory velocities; horizontal black
+%%%%%%%     bars under region-region velocity comparisons indicate
+%%%%%%%     significant differences in regions' speeds 
+%%%%%%% Input data -- both velocity and distance metrics are nTimepoints x
+%%%%%%%         nPCs x nIterations 
 %%%%%%%
-%%%%%%% This will also plot the average inter-gesture trajectory distances,
+%%%%%%% This will also plot the average inter-gesture trajectory distances
 %%%%%%
  
 
