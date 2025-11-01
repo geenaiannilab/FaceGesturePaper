@@ -4,7 +4,7 @@ set(0,'defaultAxesFontSize', 16); % bc im blind
 
 % define the dataset you are running
 thisSubj = 'combined';
-pseduoPop = 'LSonly/balanced'; % vs 'unbalanced'
+pseduoPop = 'Thronly/balanced'; % vs 'unbalanced'
 subj = 'combinedSubjs'; % vs 'separateSubjs' v 'combinedSubjs'
 nullModelFlag = true;  nullModelType = 'shuffleBhvTimepoints';
 nNullShuffles = 50;
@@ -17,7 +17,7 @@ saveFlag = true;
 dataDir = (['/Users/geena/Dropbox/PhD/SUAinfo/PSIDResults2023/Pseudopopulations/' pseduoPop '/' subj '/N_' popSize 'cells/']);
 outDir = ['/Users/geena/Dropbox/PhD/SUAinfo/PSIDResults2023/Pseudopopulations/' pseduoPop '/' subj '/N_' popSize 'cells/results'];
 
-for pp = 4:nPseudopops
+for pp = 10:nPseudopops
 
    % load one pseudopop data
    trueData = load([dataDir 'pp_N' num2str(pp) '.mat']);
@@ -58,6 +58,8 @@ for pp = 4:nPseudopops
         shuffledResultsAll.(thisSubj).(regionList{rr}).neuralSelfPred2stageStd(:,pp) = stdCompareSelfPredFullNull';
         shuffledResultsAll.(thisSubj).(regionList{rr}).neuralSelfPred1stage(:,pp) = meanCompareSelfPred1Null';
         shuffledResultsAll.(thisSubj).(regionList{rr}).neuralSelfPred1stageStd(:,pp) = stdCompareSelfPred1Null';
+        
+       % [m, vals, validIdx] = safeFieldMean(structArray, regionName, fieldName)
         shuffledResultsAll.(thisSubj).(regionList{rr}).N1(pp) = mean(arrayfun(@(x) x.combined.(regionList{rr}).N1, shuffledResult));
         shuffledResultsAll.(thisSubj).(regionList{rr}).NX(pp) = mean(arrayfun(@(x) x.combined.(regionList{rr}).NX, shuffledResult));
         shuffledResultsAll.(thisSubj).(regionList{rr}).horz(pp) = mean(arrayfun(@(x) x.combined.(regionList{rr}).horz, shuffledResult));
@@ -139,5 +141,47 @@ end % end shuffleFlagType
 end % end function
 
 
+function [m, vals, validIdx] = safeFieldMean(structArray, regionName, fieldName)
+%SAFEFIELDMEAN Safely average structArray(i).combined.(regionName).(fieldName)
+%   Skips elements where the region or field is missing or [].
+%   Returns:
+%     m        - mean of valid values (NaN if none)
+%     vals     - vector of valid numeric values (row)
+%     validIdx - linear indices of structArray used in 'vals'
+%
+%   Example:
+%     [m, vals, idx] = safeFieldMean(shuffledResult, regionList{rr}, 'NX');
+
+    n = numel(structArray);
+    buf = nan(1, n);           % preallocate with NaNs
+    for ii = 1:n
+        try
+            % Access combined.(regionName).(fieldName) if present and non-empty
+            c = structArray(ii).combined;
+            if isfield(c, regionName)
+                r = c.(regionName);
+                if isfield(r, fieldName)
+                    v = r.(fieldName);
+                    if ~isempty(v) && isnumeric(v)
+                        % If it's a vector, take its mean (common case-safe).
+                        % Remove the next line if you only want scalars.
+                        if ~isscalar(v), v = mean(v, 'omitnan'); end
+                        buf(ii) = v;
+                    end
+                end
+            end
+        catch
+            % Any access error -> leave as NaN (skipped)
+        end
+    end
+
+    validIdx = find(~isnan(buf));
+    vals     = buf(validIdx);
+    if ~isempty(vals)
+        m = mean(vals, 'omitnan');
+    else
+        m = NaN;
+    end
+end
 
 

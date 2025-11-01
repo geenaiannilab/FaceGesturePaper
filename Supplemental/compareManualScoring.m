@@ -2,12 +2,39 @@
 %%%%% PLOTS Fig. S1 
 %%%%% Handscored gesture onsets compared to automatic detection by continuous facial marker tracking
 %%%%%     'markerTrajectories.mat' been smoothed with smoothdata(DLCmarkersIn, 'gaussian') which is truncated 50 ms gaussian (SD is 1/5th of window), then data rebinned at 10 ms.
-%%%%%%     This is the same input as Figures 1 B-F
+%%%%%%      
+%%%%%%  This version pools data across all days of DLC data 
 %%%%%% 
 
-clear all; close all;
 
-load(['../Figure1/matfiles/markerTrajectories.mat']);
+% clear all; close all;
+% thisDir = pwd;
+% workDir = [thisDir '/matfiles/'];
+% load([workDir '/markerTrajectories.mat']);
+% 
+% %load(['/Users/geena/Downloads/markerTrajectories.mat']);
+
+
+% Specify the day roots (each contains a DLC subfolder) ---
+%
+dayRoots = {'/Users/geena/Dropbox/PhD/SUAinfo/Barney_210704/', ...
+    '/Users/geena/Dropbox/PhD/SUAinfo/Barney_210706/', ...
+'/Users/geena/Dropbox/PhD/SUAinfo/Thor_171010/', ...
+    '/Users/geena/Dropbox/PhD/SUAinfo/Thor_171027/'};
+
+% compile norms across *all* markers each day
+[compiled, taxis, gestureNames, bhvs2plot, meta] = ...
+    compileDLCdays(dayRoots, 'Filename','markerTrajectories.mat', 'Mode','norm');
+
+% Your script can continue unchanged below this point:
+tmin = taxis(1); tmax = taxis(end);
+tbin = 0.01;
+t0   = find(taxis==0);
+tspon = [1 80];
+ntspon_bins = tspon(2)-tspon(1)+1;
+pre_mov_period = taxis(1:t0);
+n_bhvs = length(bhvs2plot);  % make sure n_bhvs follows compiled data
+
 
 tmin = taxis(1); tmax = taxis(end); %this is in seconds
 tbin=0.01;                          %bin width is 10 ms
@@ -37,15 +64,19 @@ fig1_nrow=5; fig1_ncol=3;
 for bhv = 1:n_bhvs
   
     %trajectories by time, trials, and PCs
-    trajs = squeeze(bhvTraj(bhv).data); %time, trial, 
-    [time, trials, PCnum] = size(trajs);
+    %trajs = squeeze(bhvTraj(bhv).data); %time, trial, 
+    %[time, trials, PCnum] = size(trajs);
     
     %trajectory length by time, trials
-    trajs_norm=zeros(time, trials);
-    for i=1:trials
-      trajs_norm(:,i)=vecnorm(squeeze(trajs(:,i,:)),2,2);
-    end
+    %trajs_norm=zeros(time, trials);
+    %for i=1:trials
+     % trajs_norm(:,i)=vecnorm(squeeze(trajs(:,i,:)),2,2);
+    %end
     
+    % Use compiled norms (time x trials) directly
+    trajs_norm = compiled(bhv).norms;
+    [time, trials] = size(trajs_norm);
+   
     %(1) Basic Characterization 
     % mean and standard deviation over trials, i.e. function of time
     avg_traj=mean(trajs_norm,2);
@@ -183,7 +214,7 @@ for bhv = 1:n_bhvs
     
     ww=1;           %window width in number of bins 
     wc=ceil(ww/2.); %window center
-    sw=9;           %step width from window to window
+    sw=9; %           %step width from window to window
     sb=ceil(sw/2.); %start bin
     n_steps=floor(time/sw);
     tnsc=mean(trajs_norm(1:ww,:),1); %comparison distribution
@@ -199,11 +230,20 @@ for bhv = 1:n_bhvs
     cc_mc_kw=multcompare(stats_kw,"CriticalValueType","dunnett","Approximate",1,"Display","off");
     p_mc_kw=cc_mc_kw(:,6); %now limited to the comparison to control group
 
+    % Replace negative or zero values with a tiny positive floor
+    floorVal = 1e-12 * min(p_mc_kw(p_mc_kw > 0));  % e.g. 10⁻¹² × smallest positive value
+    if isempty(floorVal) || floorVal == 0
+     floorVal = 1e-20;  % fallback
+    end
+    p_mc_kw(p_mc_kw <= 0) = floorVal;
+    
     subplot(fig1_nrow,fig1_ncol,1*fig1_ncol+bhv);
     hold off ; ax = gca; ax.YAxis.Visible = 'off';
+
     semilogy(sw_taxis,[1 p_mc_kw'],'Color',colors(bhv,:),'LineStyle','-','LineWidth',2);
     ylim([10^-15 2]);
     line([tmin tmax],0.01*[1 1],'Color','black','LineStyle',':');
+    
     title('Kruskal Wallis Test','FontSize',12); 
     xlabel('Time [sec]','FontSize',12); ylabel('Probability','FontSize',12);
     ax.XAxis.TickDirection = 'out'; ax.YAxis.TickDirection = 'out';
